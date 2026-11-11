@@ -29,10 +29,12 @@ local function loadModule(relPath: string)
 end
 
 local Config = loadModule("Core/Config.luau")
+local SkinData = loadModule("Core/SkinData.luau")
 local Aura = loadModule("Visuals/Aura.luau")
 local Tracers = loadModule("Visuals/Tracers.luau")
 local ESP2D = loadModule("Visuals/ESP2D.luau")
 local Chams = loadModule("Visuals/Chams.luau")
+local SkinChanger = loadModule("Visuals/SkinChanger.luau")
 local GameHook = loadModule("Core/GameHook.luau")
 local Interface = loadModule("UI/Interface.luau")
 
@@ -43,10 +45,12 @@ end
 
 local App = {
     Config = Config,
+    SkinData = SkinData,
     Aura = Aura,
     Tracers = Tracers,
     ESP2D = ESP2D,
     Chams = Chams,
+    SkinChanger = SkinChanger,
     GameHook = GameHook,
     Interface = nil,
 }
@@ -54,6 +58,9 @@ local App = {
 function App.Destroy()
     if App.GameHook then
         App.GameHook.Destroy(App.Config, App.Aura, App.Tracers, App.ESP2D, App.Chams)
+    end
+    if App.SkinChanger and App.SkinChanger.Destroy then
+        pcall(App.SkinChanger.Destroy)
     end
     if App.Interface and App.Interface.Library and App.Interface.Library.Unload then
         pcall(App.Interface.Library.Unload)
@@ -66,7 +73,11 @@ end
 env.RivalsHubInstance = App
 
 GameHook.Init(Config, Aura, Tracers, ESP2D, Chams)
-App.Interface = Interface.Init(Config, Aura, Tracers, GameHook, Chams, function()
+if SkinChanger and SkinChanger.HookGame then
+    SkinChanger.HookGame()
+end
+
+App.Interface = Interface.Init(Config, Aura, Tracers, GameHook, Chams, ESP2D, SkinChanger, SkinData, function()
     App.Destroy()
 end)
 

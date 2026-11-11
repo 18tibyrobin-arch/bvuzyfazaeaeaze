@@ -140,10 +140,11 @@ function Aura.Remove(character: Model?)
     Aura.Tracked[character] = nil
 end
 
-function Aura.SetVisible(visible: boolean)
+function Aura.SetVisible(visible: boolean, cfg: any?)
+    local chamsOn = cfg and cfg.Visuals and cfg.Visuals.ESP and cfg.Visuals.ESP.Chams
     for _, data in pairs(Aura.Tracked) do
         if data.highlight and data.highlight.Parent then
-            data.highlight.Enabled = visible
+            data.highlight.Enabled = visible and (not chamsOn)
         end
         if data.light and data.light.Parent then
             data.light.Enabled = visible
@@ -281,7 +282,7 @@ function Aura.Apply(character: Model, isAllyTeam: boolean, cfg: any, tag: string
     hl.FillTransparency = 0.75
     hl.OutlineColor = bright
     hl.OutlineTransparency = 0.1
-    hl.Enabled = espCfg.Aura
+    hl.Enabled = espCfg.Aura and (not espCfg.Chams)
     hl:SetAttribute(tag, true)
     hl.Parent = character
     table.insert(instancesList, hl)

@@ -49,6 +49,14 @@ local Config = {
             SpiralTwist = 1.25,
             MaxDistance = 800,
             Interval = 0.11,
+        },
+        SkinChanger = {
+            Enabled = true,
+            SelectedWeapon = "Assault Rifle",
+            SelectedSkin = "Default",
+            SelectedWrap = "Default",
+            SelectedFinisher = "Default",
+            AutoApply = true,
         }
     },
     Settings = {

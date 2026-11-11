@@ -63,12 +63,652 @@ local Config = {
             SpiralTwist = 1.25,
             MaxDistance = 800,
             Interval = 0.11,
+        },
+        SkinChanger = {
+            Enabled = true,
+            SelectedWeapon = "Assault Rifle",
+            SelectedSkin = "Default",
+            SelectedWrap = "Default",
+            SelectedFinisher = "Default",
+            AutoApply = true,
         }
     },
     Settings = {
         Theme = "Default Dark",
         ShowWatermark = true,
     }
+}
+
+local SkinData = {}
+SkinData.Weapons = {
+    "Assault Rifle",
+    "Battle Axe",
+    "Bow",
+    "Burst Rifle",
+    "Chainsaw",
+    "Crossbow",
+    "Daggers",
+    "Distortion",
+    "Elixir",
+    "Energy Pistols",
+    "Energy Rifle",
+    "Exogun",
+    "Fists",
+    "Flamethrower",
+    "Flare Gun",
+    "Flashbang",
+    "Freeze Ray",
+    "Glass Cannon",
+    "Glast Shard",
+    "Grappler",
+    "Grenade",
+    "Grenade Launcher",
+    "Gunblade",
+    "Handgun",
+    "Jump Pad",
+    "Katana",
+    "Knife",
+    "Maul",
+    "Medkit",
+    "Minigun",
+    "Molotov",
+    "Paintball Gun",
+    "Permafrost",
+    "RNG Dice",
+    "RPG",
+    "Revolver",
+    "Riot Shield",
+    "Satchel",
+    "Scepter",
+    "Scythe",
+    "Shorty",
+    "Shotgun",
+    "Slingshot",
+    "Smoke Grenade",
+    "Sniper",
+    "Spear",
+    "Spray",
+    "Subspace Tripmine",
+    "Trowel",
+    "Uzi",
+    "War Horn",
+    "Warper",
+    "Warpstone",
+    "Wildcat",
+}
+
+SkinData.SkinsByWeapon = {
+    ["Assault Rifle"] = { "Default", "10B Visits", "AK-47", "AKEY-47", "Augmented Rifle", "Boneclaw Rifle", "Drum Gun", "Gingerbread Augmented Rifle", "Glorious Assault Rifle", "Pearl Rifle", "Phoenix Rifle" },
+    ["Battle Axe"] = { "Default", "Balloon Axe", "Ban Axe", "Cerulean Axe", "Glorious Battle Axe", "Keyttle Axe", "Mimic Axe", "Nordic Axe", "Street Sign", "The Shred", "Tiki Axe" },
+    ["Bow"] = { "Default", "Balloon Bow", "Bat Bow", "Beloved Bow", "Compound Bow", "Dream Bow", "Frostbite Bow", "Glorious Bow", "Key Bow", "Palm Bow", "Raven Bow" },
+    ["Burst Rifle"] = { "Default", "Aqua Burst", "Bullpup Burst", "Electro Rifle", "Glorious Burst Rifle", "Keyst Rifle", "Pine Burst", "Pixel Burst", "Sand Bullpup Burst", "Spectral Burst" },
+    ["Chainsaw"] = { "Default", "Blobsaw", "Buzzsaw", "Festive Buzzsaw", "Glorious Chainsaw", "Handsaws", "Mega Drill", "Sharksaw" },
+    ["Crossbow"] = { "Default", "Arch Crossbow", "Campfire Crossbow", "Crossbone", "Frostbite Crossbow", "Glorious Crossbow", "Harpoon Crossbow", "Pixel Crossbow", "Spider Crossbow", "Violin Crossbow" },
+    ["Daggers"] = { "Default", "Aces", "Bat Daggers", "Broken Hearts", "Cookies", "Crystal Daggers", "Cursed Daggers", "Glorious Daggers", "Keynais", "Paper Planes", "Shurikens", "Starfish", "Toaster" },
+    ["Distortion"] = { "Default", "Bubble Distortion", "Cyber Distortion", "Electropunk Distortion", "Experiment D15", "Glorious Distortion", "Magma Distortion", "Plasma Distortion", "Sleighstortion" },
+    ["Energy Pistols"] = { "Default", "Apex Pistols", "Enerkey Pistols", "Glorious Energy Pistols", "Hacker Pistols", "Hydro Pistols", "Hyperlaser Guns", "New Year Energy Pistols", "Sol Pistols", "Soul Pistols", "Void Pistols" },
+    ["Energy Rifle"] = { "Default", "Apex Rifle", "Enerkey Rifle", "Glorious Energy Rifle", "Hacker Rifle", "Hydro Rifle", "New Year Energy Rifle", "Sol Rifle", "Soul Rifle", "Void Rifle" },
+    ["Exogun"] = { "Default", "Exogourd", "Glorious Exogun", "Midnight Festive Exogun", "Pearl Exogun", "Ray Gun", "Repulsor", "Singularity", "Wondergun" },
+    ["Fists"] = { "Default", "Boxing Gloves", "Brass Knuckles", "Crab Claws", "Festive Fists", "Fist", "Fists of Hurt", "Glorious Fists", "Pirate Hook", "Pumpkin Claws", "Spy Gloves", "Towerstone Fists" },
+    ["Flamethrower"] = { "Default", "Bubblethrower", "Extinguisher", "Glitterthrower", "Glorious Flamethrower", "Jack O\", "Keythrower", "Lamethrower", "Pixel Flamethrower", "Rainbowthrower", "Snowblower" },
+    ["Flare Gun"] = { "Default", "Banana Flare", "Dynamite Gun", "Firework Gun", "Glorious Flare Gun", "Pocket Volcano", "Vexed Flare Gun", "Wrapped Flare Gun" },
+    ["Flashbang"] = { "Default", "Camera", "Disco Ball", "Glorious Flashbang", "Lightbulb", "Pixel Flashbang", "Shining Star", "Skullbang", "Sol" },
+    ["Freeze Ray"] = { "Default", "Bubble Ray", "Cooler", "Glorious Freeze Ray", "Gum Ray", "Spider Ray", "Temporal Ray", "Wrapped Freeze Ray" },
+    ["Grappler"] = { "Default", "Arcade Claw", "Fishing Rod", "Genie Lamp", "Glorious Grappler", "Lasso", "Lifeguard Grappler", "Web Shooters" },
+    ["Grenade"] = { "Default", "Batnade", "Cuddle Bomb", "Dynamite", "Fizz Bomb", "Frozen Grenade", "Glorious Grenade", "Jingle Grenade", "Keynade", "Soul Grenade", "Water Balloon", "Whoopee Cushion" },
+    ["Grenade Launcher"] = { "Default", "Balloon Launcher", "Coconut Launcher", "Gearnade Launcher", "Glorious Grenade Launcher", "Skull Launcher", "Snowball Launcher", "Swashbuckler", "Uranium Launcher" },
+    ["Gunblade"] = { "Default", "Batblade", "Boneblade", "Crude Gunblade", "Elf\", "Glorious Gunblade", "Gunsaw", "Hyper Gunblade", "Keyblade", "Sharkbite" },
+    ["Handgun"] = { "Default", "Blaster", "Gingerbread Handgun", "Glorious Handgun", "Gumball Handgun", "Hand Gun", "Pixel Handgun", "Pumpkin Handgun", "Sandgun", "Stealth Handgun", "Towerstone Handgun", "Warp Handgun" },
+    ["Jump Pad"] = { "Default", "Bounce House", "Flamingo Floatie", "Glorious Jump Pad", "Jolly Man", "Shady Chicken Sandwich", "Spider Web", "Trampoline" },
+    ["Katana"] = { "Default", "Arch Katana", "Crystal Katana", "Cutlass", "Evil Trident", "Glorious Katana", "Keytana", "Lightning Bolt", "Linked Sword", "New Year Katana", "Pixel Katana", "Riptide Katana", "Saber", "Stellar Katana", "Swordfish" },
+    ["Knife"] = { "Default", "Armature.001", "Balisong", "Birthday Candle", "Caladbolg", "Candy Cane", "Chancla", "Glorious Knife", "Karambat", "Karambit", "Keylisong", "Keyrambit", "Machete", "Pencil", "Shark Tooth", "Trophy Knife" },
+    ["MISSING_WEAPON"] = { "Default", "MISSING_SKIN" },
+    ["Maul"] = { "Default", "Ban Hammer", "Clown Hammer", "Excalibur", "Giant Popsicle", "Glorious Maul", "Ice Maul", "Jeremiah", "Sleigh Maul", "Starforge Maul" },
+    ["Medkit"] = { "Default", "Box of Chocolates", "Briefcase", "Bucket of Candy", "Glorious Medkit", "Ice Cream", "Laptop", "Medkitty", "Milk & Cookies", "Sandwich" },
+    ["Minigun"] = { "Default", "Fighter Jet", "Glorious Minigun", "Lasergun 3000", "Pixel Minigun", "Pumpkin Minigun", "Shark Minigun", "Wrapped Minigun" },
+    ["Molotov"] = { "Default", "Arch Molotov", "Campfire Stick", "Coffee", "Glorious Molotov", "Hot Coals", "Lava Lamp", "Ship In A Bottle", "Torch", "Vexed Candle" },
+    ["Paintball Gun"] = { "Default", "Boba Gun", "Brain Gun", "Glorious Paintball Gun", "Ketchup Gun", "Lemonade Gun", "Paintballoon Gun", "Slime Gun", "Snowball Gun" },
+    ["Permafrost"] = { "Default", "Glorious Permafrost", "Ice Permafrost", "Permafrost.rbxm", "Permasand", "Snowman Permafrost", "Starforge Permafrost", "Temporal Permafrost", "Xenofrost" },
+    ["RPG"] = { "Default", "Cupcake Launcher", "Firework Launcher", "Glorious RPG", "Nuke Launcher", "Pencil Launcher", "Pumpkin Launcher", "RPKEY", "Rocket Launcher", "Spaceship Launcher", "Squid Launcher", "Sundae Launcher" },
+    ["Revolver"] = { "Default", "Boneclaw Revolver", "Cruise Revolver", "Desert Eagle", "Glorious Revolver", "Keyvolver", "Peppergun", "Peppermint Sheriff", "Sheriff" },
+    ["Riot Shield"] = { "Default", "Broken Surfboard", "Door", "Energy Shield", "Glorious Riot Shield", "Masterpiece", "Sled", "Tombstone Shield" },
+    ["Satchel"] = { "Default", "Advanced Satchel", "Bag o\", "Glorious Satchel", "Lifeguard Satchel", "Notebook Satchel", "Pizza Box", "Potion Satchel", "Suspicious Gift" },
+    ["Scythe"] = { "Default", "Anchor", "Bat Scythe", "Bug Net", "Cryo Scythe", "Crystal Scythe", "Glorious Scythe", "Keythe", "Palm Scythe", "Plastic Flamingo", "Sakura Scythe", "Scythe of Death" },
+    ["Shorty"] = { "Default", "Balloon Shorty", "Bubble Shorty", "Cannon Shorty", "Demon Shorty", "Glorious Shorty", "Lovely Shorty", "Not So Shorty", "Too Shorty", "Wrapped Shorty" },
+    ["Shotgun"] = { "Default", "Balloon Shotgun", "Broomstick", "Cactus Shotgun", "Glorious Shotgun", "Hyper Shotgun", "Shark Shotgun", "Shotkey", "Wrapped Shotgun" },
+    ["Slingshot"] = { "Default", "Boneshot", "Glorious Slingshot", "Goalpost", "Harp", "Keyshot", "Lucky Horseshoe", "Palmshot", "Reindeer Slingshot", "Slingshotula", "Stick" },
+    ["Smoke Grenade"] = { "Default", "Balance", "Beach Ball", "Emoji Cloud", "Eyeball", "Glorious Smoke Grenade", "Hourglass", "Snowglobe" },
+    ["Sniper"] = { "Default", "Campfire Sniper", "Event Horizon", "Eyething Sniper", "Gingerbread Sniper", "Glorious Sniper", "Hyper Sniper", "Keyper", "Kraken Sniper", "Light Fifty", "Pixel Sniper" },
+    ["Spear"] = { "Default", "Chark Kebab", "Fork", "Giant Pencil", "Glorious Spear", "Gravelight", "Plunger", "Studio Light", "Thunderpike" },
+    ["Spray"] = { "Default", "Boneclaw Spray", "Campfire Spray", "Glorious Spray", "Key Spray", "Lovely Spray", "Nail Gun", "Pine Spray", "Spray Bottle" },
+    ["Subspace Tripmine"] = { "Default", "DIY Tripmine", "Dev-in-the-Box", "Don\", "Glorious Subspace Tripmine", "Hazard Sign", "Pot o\", "Spring", "Trick or Treat" },
+    ["Trowel"] = { "Default", "Garden Shovel", "Glorious Trowel", "Paintbrush", "Plastic Shovel", "Pumpkin Carver", "Scooper", "Snow Shovel" },
+    ["Uzi"] = { "Default", "Arch Uzi", "Demon Uzi", "Ducky Uzi", "Electro Uzi", "Glorious Uzi", "Keyzi", "Money Gun", "Pine Uzi", "Water Uzi" },
+    ["War Horn"] = { "Default", "Air Horn", "Boneclaw Horn", "Glorious War Horn", "Lifeguard Whistle", "Mammoth Horn", "Megaphone", "Trumpet" },
+    ["Warper"] = { "Default", "Arcane Warper", "Bubbler", "Electropunk Warper", "Experiment W4", "Frost Warper", "Glitter Warper", "Glorious Warper", "Hotel Bell" },
+    ["Warpstone"] = { "Default", "Cyber Warpstone", "Electropunk Warpstone", "Glorious Warpstone", "Teleport Disc", "Unstable Warpstone", "Warp Juice", "Warpbone", "Warpeye", "Warpstar" },
+    ["Wildcat"] = { "Default", "Glorious Wildcat", "Mimic Wildcat", "Plasma Wildcat", "Shadow Wildcat", "Towerstone Wildcat" },
+}
+
+SkinData.Wraps = {
+    "Default",
+    ".dll",
+    ".exe",
+    "1B Visits",
+    "2025 Wrapping",
+    "2026 Wrapping",
+    "A5",
+    "Accretion",
+    "Aegis",
+    "Amber",
+    "Ancient",
+    "Antimatter",
+    "Arabesque",
+    "Arbiter",
+    "Arcane",
+    "Arctic Camo",
+    "Arena",
+    "Aurora",
+    "Aurum",
+    "Bat Flock",
+    "Beach",
+    "Bee",
+    "Beggar",
+    "Beige",
+    "Birthday Wrapping",
+    "Black",
+    "Black Damascus",
+    "Black Glass",
+    "Black Granite",
+    "Black Opal",
+    "Blaze",
+    "Bliss",
+    "Blizzard",
+    "Blue",
+    "Bluesteel",
+    "Blush",
+    "Blush Wrapping",
+    "Bombastic",
+    "Boomore",
+    "Borealis",
+    "Brain",
+    "Brewery",
+    "Brianore",
+    "Bright",
+    "Brimstone",
+    "Brown",
+    "Bubbles",
+    "Bunsen",
+    "Cactus",
+    "Candlelight",
+    "Candy Apple",
+    "Caned Wrapping",
+    "Carbon Fiber",
+    "Carbon Wrapping",
+    "Cardboard",
+    "Cardinal",
+    "Carmine",
+    "Carpet",
+    "Cartoony Paint",
+    "Cashmere Wrapping",
+    "Celestial",
+    "Celtic",
+    "Cerulean",
+    "Cheese",
+    "Chilled Wrapping",
+    "Chromatic",
+    "Chrome",
+    "Chrome Webs",
+    "Circuit",
+    "Clamshell",
+    "Classic",
+    "Clouds",
+    "Clovers",
+    "Cold Metal",
+    "Community",
+    "Conduction",
+    "Confetti Cake",
+    "Cool",
+    "Cool Crochet",
+    "Copper",
+    "Cork",
+    "Cream",
+    "Creamsicle",
+    "Creme Wrapping",
+    "Crime Scene",
+    "Crimson",
+    "Crimson Art",
+    "Crossed",
+    "Crystallized",
+    "Cursed",
+    "Damascus",
+    "Danger",
+    "Dark",
+    "Dark Arena",
+    "Dark Matter",
+    "Dawn",
+    "Desert Camo",
+    "Devourer",
+    "Diamond",
+    "Digital Camo",
+    "Disco",
+    "Dunes",
+    "Dusky Wrapping",
+    "Dutchman",
+    "Eco",
+    "Egg Fried Rice",
+    "Empress",
+    "Encroached",
+    "Encrypt",
+    "Eruption",
+    "Evergreen Wrapping",
+    "Experience",
+    "Facility",
+    "Fame Stars",
+    "Festive Lights",
+    "Fiery",
+    "Fire",
+    "Fire Horse",
+    "Fish Scales",
+    "Forest Camo",
+    "Forest Wrapping",
+    "Fortune Wrapping",
+    "Fracture",
+    "Frankenstein",
+    "Frigid",
+    "Frostbite",
+    "Frosted",
+    "Frosty Wrapping",
+    "Galvanized",
+    "Geometric",
+    "Gingerbread",
+    "Glacier",
+    "Glamour",
+    "Glass",
+    "Glisten",
+    "Glorious",
+    "Glossy",
+    "Gold",
+    "Grass",
+    "Green",
+    "Green Goo",
+    "Green Sparkle",
+    "Greenflame",
+    "Groove",
+    "Gunmetal",
+    "Hallow",
+    "Hammered Copper",
+    "Haunted",
+    "Heartfelt",
+    "Heatwave",
+    "Heirloom",
+    "Hesper",
+    "Highlighter",
+    "Holly Wrapping",
+    "Hologram",
+    "Hologram Arena",
+    "Honey",
+    "Honeycomb",
+    "Hot Cocoa",
+    "Hyperdrive",
+    "Hypnotic",
+    "Ice Queen",
+    "Igneous",
+    "Indigo Sparkle",
+    "Indigo Wrapping",
+    "Inlets",
+    "Insidious",
+    "Insignia",
+    "Invisible",
+    "Iridescent",
+    "Jean",
+    "Jolly Wrapping",
+    "Ladybug",
+    "Lapis",
+    "Lavish Crystal",
+    "Leafy Grass",
+    "Lemon",
+    "Lemonade",
+    "Lighthouse",
+    "Lightning",
+    "Limefire",
+    "Liquid Chrome",
+    "Liquid Gold",
+    "Lovely Leopard",
+    "Lucid Halftone",
+    "Lucre",
+    "Lumber",
+    "Luxe",
+    "Luxurious",
+    "Luxury Wrapping",
+    "MISSING_WRAP",
+    "MaGGenta",
+    "Machine",
+    "Magma",
+    "Magnetite",
+    "Mahogany",
+    "Mainframe",
+    "Maize",
+    "Malachite",
+    "Malevolent",
+    "Maroon",
+    "Medium stone grey",
+    "Merlot Wrapping",
+    "Mesa",
+    "Mesh",
+    "Messis",
+    "Midnight",
+    "Mint",
+    "Mint Choco Chip",
+    "Mintbread",
+    "Minty Wrapping",
+    "Mischief",
+    "Mocha Wrapping",
+    "Model",
+    "Money",
+    "Moonstone",
+    "Mossy Stone",
+    "Mousse Wrapping",
+    "Mummy",
+    "Mustard",
+    "Navy",
+    "Neapolitan",
+    "Nebula",
+    "Necromancer",
+    "Nekore",
+    "Neo",
+    "Neon Lights",
+    "Net",
+    "Nightmare",
+    "Noir",
+    "Normal",
+    "Nosnite",
+    "Nova",
+    "Obsidian",
+    "Ocean Camo",
+    "Olive",
+    "Olo",
+    "Omnisand",
+    "Only Six",
+    "OranGG",
+    "Orange",
+    "Orichalcum",
+    "Ornamented",
+    "Ornate",
+    "Overseer",
+    "PB & J",
+    "Paint",
+    "Paparazzi",
+    "Patriot",
+    "Pearlescent",
+    "Pearly Wrapping",
+    "Peppermint",
+    "Peppermint Wrapping",
+    "Peridot",
+    "Peril",
+    "Periwinkle Wrapping",
+    "Pine",
+    "Pink",
+    "Pink Crochet",
+    "Pink Glitter",
+    "Pink Lemonade",
+    "Pixel Blight",
+    "Pixel Light",
+    "Plaid Pajama",
+    "Plasma",
+    "Plastic",
+    "Playful",
+    "Polar Wrapping",
+    "Polaris",
+    "Popcorn",
+    "Popsicle",
+    "Portal",
+    "Purple",
+    "Purple Goo",
+    "Purpleize",
+    "Quartz",
+    "Quasar",
+    "RIVALS Wrapping",
+    "Rafflesia",
+    "Rage",
+    "Ravensoul",
+    "Red",
+    "Red Carpet",
+    "Red Moon",
+    "Red Rubber",
+    "Regal",
+    "Regal Wrapping",
+    "Reptile",
+    "Resolute",
+    "Rift",
+    "Rivalry",
+    "Rug",
+    "Ruined Pillars",
+    "Rust",
+    "Rustic",
+    "Salmon",
+    "Scales",
+    "Scorched",
+    "Scourge",
+    "Scribble",
+    "Sea Glass",
+    "Sensite",
+    "Sentinel",
+    "Serenity",
+    "Shadore",
+    "Shadow Halftone",
+    "Shadow Ink",
+    "Shore",
+    "Simulation",
+    "Sky",
+    "Sleet",
+    "Slime",
+    "Slush",
+    "Snowfall",
+    "Snowy Night",
+    "Solar",
+    "Soul Scourge",
+    "Spartan",
+    "Spectral",
+    "Speed",
+    "Spellslinger",
+    "Spiral",
+    "Splattered",
+    "Stained",
+    "Starblaze",
+    "Starfall",
+    "Steel",
+    "Stocking Fur",
+    "Storm",
+    "Street Camo",
+    "Strobe",
+    "Studded",
+    "Studs",
+    "Sunset",
+    "Sunset Sparkle",
+    "Supernova",
+    "Surge",
+    "Swirls",
+    "Synthwave",
+    "TIX",
+    "TV Error",
+    "TV Static",
+    "Tawny",
+    "Teal",
+    "Tealur",
+    "Tempest",
+    "Termination",
+    "The Heights",
+    "Thunderburst",
+    "Tidal",
+    "Tiger",
+    "Titanium",
+    "Toxin",
+    "Toy",
+    "Triplaser",
+    "Trophy",
+    "Tungsten",
+    "Tusky",
+    "Ugly Sweater",
+    "Ultra Zed",
+    "Ultrablue",
+    "Universal",
+    "Urban Camo",
+    "Venom",
+    "Vexed",
+    "Vigor",
+    "Vile",
+    "Violet",
+    "Virus",
+    "Voltaic",
+    "Waffle Cone",
+    "Waste",
+    "Water",
+    "Water Blaster",
+    "Watermelon",
+    "Wealth",
+    "Webbed",
+    "Well Done",
+    "Werewolf Fur",
+    "White",
+    "Winter Solstice",
+    "Winter Wrapping",
+    "Wintergreen",
+    "Wintry",
+    "Woven",
+    "Yang",
+    "Yellow",
+    "Yin",
+    "Zombie",
+}
+
+SkinData.Finishers = {
+    "Default",
+    "5B Visits",
+    "Acid Splash",
+    "Ascend",
+    "BANG!",
+    "BONK!",
+    "Bad Mood",
+    "Balloons",
+    "Batsplosion",
+    "Beach Day",
+    "Beacon",
+    "Become Bat",
+    "Bite",
+    "Blip",
+    "Bogey",
+    "Bonesplosion",
+    "Boogie",
+    "Broom Ride",
+    "Bubble Ball",
+    "Bubblegum",
+    "Caked",
+    "Chalked",
+    "Chark Attack",
+    "Chill Out",
+    "Clammed",
+    "Clapped",
+    "Coalify",
+    "Collapse",
+    "Confetti",
+    "Crushed",
+    "Curtain Call",
+    "DRIP",
+    "Darkheart",
+    "David",
+    "Decorated Player",
+    "Delete",
+    "Dematerialize",
+    "Diamond Hands",
+    "Digitize",
+    "Director\'s Cut",
+    "Disintegrate",
+    "Electrocute",
+    "Elfify",
+    "Enlightened",
+    "Erased",
+    "Every Finisher Ever",
+    "Faceplant",
+    "Fall Apart",
+    "Falling Icicles",
+    "Festive Confetti",
+    "Firework Show",
+    "Flick",
+    "Flop",
+    "Folded",
+    "For Glory",
+    "Freeze",
+    "Frozen",
+    "GOOAAALLLL",
+    "Giant Ice Spike",
+    "Giant Snowball",
+    "Gingerbreadify",
+    "Goofy Brawl",
+    "Grapple Hooked",
+    "Hacked",
+    "Heartbeat",
+    "Heavy Head",
+    "High Gravity",
+    "Hooked",
+    "Ignite",
+    "Impact Frame",
+    "Impaled",
+    "Inflate",
+    "Instability",
+    "Jolly Judgement",
+    "Kiddie Pool",
+    "Leprechaunify",
+    "Loose Coconut",
+    "Lost Soul",
+    "Low Gravity",
+    "MISSING_FINISHER",
+    "Midas Touch",
+    "Mow Them Down",
+    "Northern Light Show",
+    "OOF",
+    "Opulent",
+    "Orbital Strike",
+    "Paparazzi Flash",
+    "Petrify",
+    "Pixel Coins",
+    "Plushify",
+    "Poof",
+    "RIP",
+    "Ragdoll",
+    "Rainbow Barf",
+    "Reaper",
+    "Rising Star",
+    "Roadrunner",
+    "Rush",
+    "Sizzled",
+    "Sleigh Away",
+    "Snowballed",
+    "Snowmanify",
+    "Spaghettified",
+    "Spectralized",
+    "Splatter",
+    "Spooky Confetti",
+    "Spotlight",
+    "Squawk",
+    "Standing Ovation",
+    "Stiff",
+    "Sun Rays",
+    "Swept Away",
+    "Those Who Know",
+    "Toot",
+    "Tough Crowd",
+    "Tremble",
+    "Tumbleweed",
+    "Very Tragic Banana Peel Accident",
+    "Warp Sickness",
+    "Warped Away",
+    "Water Balloons",
+    "Whack A Mole",
+    "Whirlpool",
+    "Wrapped",
+    "Yoink",
+    "Zombified",
 }
 
 local function findPart(parent: Instance, name: string): BasePart?
@@ -163,9 +803,10 @@ function Aura.Remove(character: Model?)
 end
 
 function Aura.SetVisible(visible: boolean)
+    local chamsOn = Config.Visuals.ESP.Chams
     for _, data in pairs(Aura.Tracked) do
         if data.highlight and data.highlight.Parent then
-            data.highlight.Enabled = visible
+            data.highlight.Enabled = visible and (not chamsOn)
         end
         if data.light and data.light.Parent then
             data.light.Enabled = visible
@@ -302,7 +943,7 @@ function Aura.Apply(character: Model, isAllyTeam: boolean)
     hl.FillTransparency = 0.75
     hl.OutlineColor = bright
     hl.OutlineTransparency = 0.1
-    hl.Enabled = espCfg.Aura
+    hl.Enabled = espCfg.Aura and (not espCfg.Chams)
     hl:SetAttribute(Config.Tag, true)
     hl.Parent = character
     table.insert(instancesList, hl)
@@ -579,12 +1220,13 @@ ESP2D.FallbackGui = nil
 
 local function getFallbackGui(): ScreenGui
     if ESP2D.FallbackGui and ESP2D.FallbackGui.Parent then
-        return ESP2D.FallbackGui
+        .FallbackGui
     end
     local gui = Instance.new("ScreenGui")
     gui.Name = "RH_ESP2D_Fallback"
     gui.ResetOnSpawn = false
     gui.DisplayOrder = 999
+    gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     local parentTarget = game:GetService("CoreGui")
     pcall(function()
         gui.Parent = parentTarget
@@ -599,6 +1241,9 @@ end
 local function createDrawObject(drawType: string, props: {[string]: any})
     if ESP2D.HasDrawing then
         local obj = Drawing.new(drawType)
+        obj.Visible = false
+        obj.Transparency = 1
+        obj.ZIndex = 2
         for k, v in pairs(props) do
             obj[k] = v
         end
@@ -618,12 +1263,17 @@ local function createDrawObject(drawType: string, props: {[string]: any})
                 Position = Vector2.zero,
                 Size = Vector2.zero,
                 Color = props.Color or Color3.new(1, 1, 1),
+                Filled = props.Filled or false,
                 Thickness = props.Thickness or 1,
-                Remove = function(self) if self._inst then self._inst:Destroy() end end
+                Transparency = 1,
+                Remove = function(self)
+                    if self._inst then self._inst:Destroy() end
+                end
             }
         elseif drawType == "Line" then
             local frame = Instance.new("Frame")
             frame.BorderSizePixel = 0
+            frame.AnchorPoint = Vector2.new(0, 0.5)
             frame.Visible = false
             frame.Parent = gui
             return {
@@ -633,7 +1283,10 @@ local function createDrawObject(drawType: string, props: {[string]: any})
                 To = Vector2.zero,
                 Color = props.Color or Color3.new(1, 1, 1),
                 Thickness = props.Thickness or 1,
-                Remove = function(self) if self._inst then self._inst:Destroy() end end
+                Transparency = 1,
+                Remove = function(self)
+                    if self._inst then self._inst:Destroy() end
+                end
             }
         elseif drawType == "Text" then
             local label = Instance.new("TextLabel")
@@ -650,7 +1303,11 @@ local function createDrawObject(drawType: string, props: {[string]: any})
                 Color = props.Color or Color3.new(1, 1, 1),
                 Size = props.Size or 13,
                 Center = props.Center or false,
-                Remove = function(self) if self._inst then self._inst:Destroy() end end
+                Outline = props.Outline or false,
+                Transparency = 1,
+                Remove = function(self)
+                    if self._inst then self._inst:Destroy() end
+                end
             }
         end
     end
@@ -684,18 +1341,18 @@ local SKELETON_BONES_R6 = {
 function ESP2D.CreateEntry(model: Model)
     local entry = {
         model = model,
-        boxOutline = createDrawObject("Square", { Filled = false, Thickness = 3, Color = Color3.new(0, 0, 0), Visible = false }),
-        box = createDrawObject("Square", { Filled = false, Thickness = 1, Color = Color3.new(1, 1, 1), Visible = false }),
-        healthBg = createDrawObject("Line", { Thickness = 4, Color = Color3.new(0, 0, 0), Visible = false }),
-        healthBar = createDrawObject("Line", { Thickness = 2, Color = Color3.fromRGB(0, 255, 120), Visible = false }),
-        name = createDrawObject("Text", { Size = 13, Center = true, Outline = true, Color = Color3.new(1, 1, 1), Visible = false }),
-        distance = createDrawObject("Text", { Size = 11, Center = true, Outline = true, Color = Color3.fromRGB(200, 200, 200), Visible = false }),
-        weapon = createDrawObject("Text", { Size = 11, Center = true, Outline = true, Color = Color3.fromRGB(255, 220, 100), Visible = false }),
+        boxOutline = createDrawObject("Square", { Filled = false, Thickness = 3, Color = Color3.new(0, 0, 0), Visible = false, Transparency = 1 }),
+        box = createDrawObject("Square", { Filled = false, Thickness = 1, Color = Color3.new(1, 1, 1), Visible = false, Transparency = 1 }),
+        healthBg = createDrawObject("Line", { Thickness = 4, Color = Color3.new(0, 0, 0), Visible = false, Transparency = 1 }),
+        healthBar = createDrawObject("Line", { Thickness = 2, Color = Color3.fromRGB(0, 255, 120), Visible = false, Transparency = 1 }),
+        name = createDrawObject("Text", { Size = 13, Center = true, Outline = true, Color = Color3.new(1, 1, 1), Visible = false, Transparency = 1, ZIndex = 3 }),
+        distance = createDrawObject("Text", { Size = 11, Center = true, Outline = true, Color = Color3.fromRGB(200, 200, 200), Visible = false, Transparency = 1, ZIndex = 3 }),
+        weapon = createDrawObject("Text", { Size = 11, Center = true, Outline = true, Color = Color3.fromRGB(255, 220, 100), Visible = false, Transparency = 1, ZIndex = 3 }),
         skeleton = {},
     }
 
     for i = 1, 14 do
-        table.insert(entry.skeleton, createDrawObject("Line", { Thickness = 1, Color = Color3.new(1, 1, 1), Visible = false }))
+        table.insert(entry.skeleton, createDrawObject("Line", { Thickness = 1, Color = Color3.new(1, 1, 1), Visible = false, Transparency = 1 }))
     end
 
     ESP2D.Entries[model] = entry
@@ -741,10 +1398,11 @@ local function syncFallback(obj: any, drawType: string)
             inst.Position = UDim2.fromOffset(obj.Position.X, obj.Position.Y)
             inst.Size = UDim2.fromOffset(obj.Size.X, obj.Size.Y)
             inst.BorderColor3 = obj.Color
+            inst.BorderSizePixel = obj.Thickness or 1
         elseif drawType == "Line" then
             local diff = obj.To - obj.From
             local len = diff.Magnitude
-            inst.Size = UDim2.fromOffset(len, obj.Thickness)
+            inst.Size = UDim2.fromOffset(len, obj.Thickness or 1)
             inst.Position = UDim2.fromOffset(obj.From.X, obj.From.Y)
             inst.Rotation = math.deg(math.atan2(diff.Y, diff.X))
             inst.BackgroundColor3 = obj.Color
@@ -757,7 +1415,7 @@ local function syncFallback(obj: any, drawType: string)
     end
 end
 
-function ESP2D.Step(camera: Camera, characters: {[Model]: {player: Player?, isAlly: boolean, isLocal: boolean}})
+function ESP2D.Step(camera: Camera, characters: {[Model]: {player: Player?, fighter: any?, isAlly: boolean, isLocal: boolean}})
     local espCfg = Config.Visuals.ESP
     local any2DEnabled = espCfg.Box or espCfg.Skeleton or espCfg.Name or espCfg.Health or espCfg.Distance or espCfg.Weapon
 
@@ -785,9 +1443,9 @@ function ESP2D.Step(camera: Camera, characters: {[Model]: {player: Player?, isAl
         end
 
         local entry = ESP2D.Entries[model] or ESP2D.CreateEntry(model)
-        local root = model:FindFirstChild("HumanoidRootPart")
-        local head = model:FindFirstChild("Head")
-        local hum = model:FindFirstChildOfClass("Humanoid")
+        local root = model:FindFirstChild("HumanoidRootPart") or (info.fighter and info.fighter.Entity and info.fighter.Entity.RootPart)
+        local head = model:FindFirstChild("Head") or (info.fighter and info.fighter.Entity and info.fighter.Entity.Head)
+        local hum = model:FindFirstChildOfClass("Humanoid") or (info.fighter and info.fighter.Entity and info.fighter.Entity.Humanoid)
 
         if not root or not head or not model.Parent then
             ESP2D.HideEntry(entry)
@@ -814,32 +1472,54 @@ function ESP2D.Step(camera: Camera, characters: {[Model]: {player: Player?, isAl
         local isAlly = info.isAlly
         local defaultColor = isAlly and espCfg.Colors.Ally or espCfg.Colors.Enemy
 
+        -- 1) Bounding Box
         if espCfg.Box then
             local col = espCfg.BoxColor or defaultColor
             entry.boxOutline.Position = Vector2.new(boxX - 1, boxY - 1)
             entry.boxOutline.Size = Vector2.new(boxWidth + 2, boxHeight + 2)
+            entry.boxOutline.Transparency = 1
             entry.boxOutline.Visible = true
 
             entry.box.Position = Vector2.new(boxX, boxY)
             entry.box.Size = Vector2.new(boxWidth, boxHeight)
             entry.box.Color = col
+            entry.box.Transparency = 1
             entry.box.Visible = true
         else
             entry.boxOutline.Visible = false
             entry.box.Visible = false
         end
 
+        -- 2) Health Bar
         if espCfg.Health then
-            local health = hum and hum.Health or 100
-            local maxHealth = (hum and hum.MaxHealth and hum.MaxHealth > 0) and hum.MaxHealth or 100
-            local hpPct = math.clamp(health / maxHealth, 0, 1)
+            local health = 100
+            local maxHealth = 100
+            local f = info.fighter
+            if f then
+                if typeof(f.GetHealth) == "function" then
+                    local ok, h = pcall(f.GetHealth, f)
+                    if ok and typeof(h) == "number" then health = h end
+                elseif typeof(f.Health) == "number" then
+                    health = f.Health
+                end
+                if typeof(f.GetMaxHealth) == "function" then
+                    local ok, mh = pcall(f.GetMaxHealth, f)
+                    if ok and typeof(mh) == "number" and mh > 0 then maxHealth = mh end
+                end
+            end
+            if health == 100 and hum then
+                health = hum.Health
+                maxHealth = (hum.MaxHealth and hum.MaxHealth > 0) and hum.MaxHealth or 100
+            end
 
+            local hpPct = math.clamp(health / maxHealth, 0, 1)
             local barX = boxX - 5
             local barTopY = boxY
             local barBottomY = boxY + boxHeight
 
             entry.healthBg.From = Vector2.new(barX, barTopY)
             entry.healthBg.To = Vector2.new(barX, barBottomY)
+            entry.healthBg.Transparency = 1
             entry.healthBg.Visible = true
 
             local fillTopY = barBottomY - (boxHeight * hpPct)
@@ -848,17 +1528,20 @@ function ESP2D.Step(camera: Camera, characters: {[Model]: {player: Player?, isAl
             entry.healthBar.From = Vector2.new(barX, fillTopY)
             entry.healthBar.To = Vector2.new(barX, barBottomY)
             entry.healthBar.Color = hpColor
+            entry.healthBar.Transparency = 1
             entry.healthBar.Visible = true
         else
             entry.healthBg.Visible = false
             entry.healthBar.Visible = false
         end
 
+        -- 3) Player Name
         if espCfg.Name then
             local playerName = info.player and (info.player.DisplayName or info.player.Name) or model.Name
             entry.name.Text = playerName
             entry.name.Position = Vector2.new(topViewport.X, boxY - 15)
             entry.name.Color = espCfg.NameColor or defaultColor
+            entry.name.Transparency = 1
             entry.name.Visible = true
         else
             entry.name.Visible = false
@@ -866,35 +1549,66 @@ function ESP2D.Step(camera: Camera, characters: {[Model]: {player: Player?, isAl
 
         local textOffsetY = 2
 
+        -- 4) Distance (in studs / meters)
         local distStuds = (camPos - rootPos).Magnitude
         if espCfg.Distance then
             entry.distance.Text = string.format("%d studs", math.floor(distStuds))
             entry.distance.Position = Vector2.new(topViewport.X, boxY + boxHeight + textOffsetY)
             entry.distance.Color = espCfg.DistanceColor or Color3.fromRGB(200, 200, 200)
+            entry.distance.Transparency = 1
             entry.distance.Visible = true
             textOffsetY += 12
         else
             entry.distance.Visible = false
         end
 
+        -- 5) Equipped Weapon & Ammo
         if espCfg.Weapon then
-            local tool = model:FindFirstChildOfClass("Tool")
-            local weaponName = tool and tool.Name or model:GetAttribute("EquippedWeapon")
-            if not weaponName or #weaponName == 0 then
-                weaponName = "Hands"
+            local weaponText = "Hands"
+            local f = info.fighter
+            if f and f.Items then
+                for _, item in pairs(f.Items) do
+                    local isMain = false
+                    if typeof(item.IsMainItem) == "function" then
+                        local ok, m = pcall(item.IsMainItem, item)
+                        isMain = ok and m
+                    end
+                    if isMain then
+                        local wName = item.Name or "Weapon"
+                        local ammoStr = nil
+                        if typeof(item.GetAmmoVariables) == "function" then
+                            local ok, cur, resAmmo, infClip = pcall(item.GetAmmoVariables, item)
+                            if ok then
+                                if infClip then
+                                    ammoStr = "∞"
+                                elseif typeof(cur) == "number" then
+                                    ammoStr = tostring(cur)
+                                end
+                            end
+                        end
+                        weaponText = ammoStr and string.format("%s [%s]", wName, ammoStr) or wName
+                        break
+                    end
+                end
             end
-
-            local ammoVal = tool and (tool:GetAttribute("Ammo") or tool:GetAttribute("Clip"))
-            local weaponText = ammoVal and string.format("%s [%d]", weaponName, ammoVal) or weaponName
+            if weaponText == "Hands" then
+                local tool = model:FindFirstChildOfClass("Tool")
+                if tool then
+                    local ammo = tool:GetAttribute("Ammo") or tool:GetAttribute("Clip")
+                    weaponText = ammo and string.format("%s [%s]", tool.Name, tostring(ammo)) or tool.Name
+                end
+            end
 
             entry.weapon.Text = weaponText
             entry.weapon.Position = Vector2.new(topViewport.X, boxY + boxHeight + textOffsetY)
             entry.weapon.Color = espCfg.WeaponColor or Color3.fromRGB(255, 220, 100)
+            entry.weapon.Transparency = 1
             entry.weapon.Visible = true
         else
             entry.weapon.Visible = false
         end
 
+        -- 6) Skeleton Joints
         if espCfg.Skeleton then
             local isR15 = (model:FindFirstChild("UpperTorso") ~= nil)
             local bonePairs = isR15 and SKELETON_BONES_R15 or SKELETON_BONES_R6
@@ -912,6 +1626,7 @@ function ESP2D.Step(camera: Camera, characters: {[Model]: {player: Player?, isAl
                             line.From = Vector2.new(v1.X, v1.Y)
                             line.To = Vector2.new(v2.X, v2.Y)
                             line.Color = skColor
+                            line.Transparency = 1
                             line.Visible = true
                         else
                             line.Visible = false
@@ -1121,6 +1836,274 @@ function Tracers.Cleanup()
     end
 end
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+
+local SkinChanger = {}
+SkinChanger.Connections = {}
+SkinChanger.Overrides = {} -- [weaponName] = { Skin = string, Wrap = string, Finisher = string }
+SkinChanger.GlobalFinisher = "Default"
+SkinChanger.AutoApply = true
+SkinChanger.Hooked = false
+
+local WrapController = nil
+local PlayerDataController = nil
+local PlayerDataUtility = nil
+local FighterController = nil
+
+local function getControllers()
+    if not WrapController then
+        pcall(function()
+            local controllers = LocalPlayer:WaitForChild("PlayerScripts", 2):WaitForChild("Controllers", 2)
+            WrapController = require(controllers:WaitForChild("WrapController", 2))
+        end)
+    end
+    if not PlayerDataController then
+        pcall(function()
+            local controllers = LocalPlayer:WaitForChild("PlayerScripts", 2):WaitForChild("Controllers", 2)
+            PlayerDataController = require(controllers:WaitForChild("PlayerDataController", 2))
+        end)
+    end
+    if not PlayerDataUtility then
+        pcall(function()
+            local modules = ReplicatedStorage:WaitForChild("Modules", 2)
+            PlayerDataUtility = require(modules:WaitForChild("PlayerDataUtility", 2))
+        end)
+    end
+    if not FighterController then
+        pcall(function()
+            local controllers = LocalPlayer:WaitForChild("PlayerScripts", 2):WaitForChild("Controllers", 2)
+            FighterController = require(controllers:WaitForChild("FighterController", 2))
+        end)
+    end
+
+function SkinChanger.GetEquippedWeaponName(): string?
+    getControllers()
+    if FighterController and FighterController.LocalFighter then
+        local lf = FighterController.LocalFighter
+        if lf.Items then
+            for _, item in pairs(lf.Items) do
+                if typeof(item.IsMainItem) == "function" and item:IsMainItem() then
+                    return item.Name
+                end
+            end
+        end
+    end
+    local char = LocalPlayer.Character
+    if char then
+        local tool = char:FindFirstChildOfClass("Tool")
+        if tool then return tool.Name end
+    end
+    return nil
+
+function SkinChanger.ApplyWrapToModel(model: Instance, wrapName: string)
+    if not model or not wrapName or wrapName == "Default" then return end
+    getControllers()
+    if not WrapController then return end
+
+    pcall(function()
+        local CosmeticLibrary = require(ReplicatedStorage.Modules.CosmeticLibrary)
+        local cosData = CosmeticLibrary and CosmeticLibrary.Cosmetics and CosmeticLibrary.Cosmetics[wrapName]
+        if not cosData then return end
+
+        local wrappableParts = {}
+        for _, desc in ipairs(model:GetDescendants()) do
+            if desc:IsA("BasePart") and desc:HasTag("Wrappable") then
+                wrappableParts[desc] = {
+                    WrapGroup = desc:GetAttribute("WrapGroup") or 1,
+                    IgnoreMaterial = desc:GetAttribute("IgnoreMaterial"),
+                    IgnoreTransparency = desc:GetAttribute("IgnoreTransparency")
+                }
+            end
+        end
+        if model:IsA("BasePart") and model:HasTag("Wrappable") then
+            wrappableParts[model] = {
+                WrapGroup = model:GetAttribute("WrapGroup") or 1,
+                IgnoreMaterial = model:GetAttribute("IgnoreMaterial"),
+                IgnoreTransparency = model:GetAttribute("IgnoreTransparency")
+            }
+        end
+
+        local originalProps = WrapController:RecordOriginalWrapProperties(wrappableParts)
+        WrapController:ApplyWrap(originalProps, { Name = wrapName, Inverted = false }, true)
+    end)
+
+function SkinChanger.ApplySkinToViewModel(viewModel: any, skinName: string)
+    if not viewModel or not skinName or skinName == "Default" then return end
+    pcall(function()
+        local assets = LocalPlayer.PlayerScripts.Assets
+        local viewModelsFolder = assets and assets:FindFirstChild("ViewModels")
+        local skinAsset = viewModelsFolder and (viewModelsFolder:FindFirstChild(skinName, true))
+        if skinAsset and viewModel.ItemModel then
+            local currentVisual = viewModel.ItemModel:FindFirstChild("ItemVisual") or viewModel.ItemModel
+            for _, child in ipairs(currentVisual:GetChildren()) do
+                if child:IsA("BasePart") and child.Name ~= "HumanoidRootPart" then
+                    child.Transparency = 1
+                end
+            end
+            local clone = skinAsset:Clone()
+            clone.Name = "SkinChanger_Visual"
+            clone.Parent = currentVisual
+            clone:PivotTo(currentVisual:GetPivot())
+        end
+    end)
+
+function SkinChanger.Apply(weaponName: string, skinName: string?, wrapName: string?, finisherName: string?)
+    if not weaponName then return end
+
+    if not SkinChanger.Overrides[weaponName] then
+        SkinChanger.Overrides[weaponName] = {}
+    end
+
+    if skinName then
+        SkinChanger.Overrides[weaponName].Skin = skinName
+    end
+    if wrapName then
+        SkinChanger.Overrides[weaponName].Wrap = wrapName
+    end
+    if finisherName then
+        SkinChanger.Overrides[weaponName].Finisher = finisherName
+        if finisherName ~= "Default" then
+            SkinChanger.GlobalFinisher = finisherName
+        end
+    end
+
+    -- 1) Try native server equip remote if available
+    pcall(function()
+        local equipRemote = ReplicatedStorage:FindFirstChild("Remotes")
+            and ReplicatedStorage.Remotes:FindFirstChild("Data")
+            and ReplicatedStorage.Remotes.Data:FindFirstChild("EquipCosmetic")
+
+        if equipRemote then
+            if skinName and skinName ~= "Default" then
+                equipRemote:FireServer(weaponName, "Skin", skinName)
+            end
+            if wrapName and wrapName ~= "Default" then
+                equipRemote:FireServer(weaponName, "Wrap", wrapName)
+            end
+            if finisherName and finisherName ~= "Default" then
+                equipRemote:FireServer(weaponName, "Finisher", finisherName)
+            end
+        end
+    end)
+
+    -- 2) Client-side Realtime Application to Current Weapon
+    pcall(function()
+        getControllers()
+        local currentWeapon = SkinChanger.GetEquippedWeaponName()
+        if currentWeapon == weaponName or not currentWeapon then
+            -- Apply to Workspace ViewModels
+            local vmFolder = Workspace:FindFirstChild("ViewModels")
+            if vmFolder then
+                local firstPerson = vmFolder:FindFirstChild("FirstPerson")
+                if firstPerson and wrapName and wrapName ~= "Default" then
+                    SkinChanger.ApplyWrapToModel(firstPerson, wrapName)
+                end
+            end
+
+            -- Apply to Fighter Items
+            if FighterController and FighterController.LocalFighter and FighterController.LocalFighter.Items then
+                for _, item in pairs(FighterController.LocalFighter.Items) do
+                    if item.Name == weaponName or not currentWeapon then
+                        if item.ViewModel then
+                            if wrapName and wrapName ~= "Default" then
+                                SkinChanger.ApplyWrapToModel(item.ViewModel.Model, wrapName)
+                                if typeof(item.ViewModel._UpdateWrap) == "function" then
+                                    pcall(item.ViewModel._UpdateWrap, item.ViewModel)
+                                end
+                            end
+                            if skinName and skinName ~= "Default" then
+                                SkinChanger.ApplySkinToViewModel(item.ViewModel, skinName)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end)
+
+function SkinChanger.HookGame()
+    if SkinChanger.Hooked then return end
+    getControllers()
+
+    -- 1) Hook PlayerDataUtility.GetWeaponData
+    pcall(function()
+        if PlayerDataUtility and typeof(PlayerDataUtility.GetWeaponData) == "function" and not PlayerDataUtility._SkinChangerHooked then
+            PlayerDataUtility._SkinChangerHooked = true
+            local origGetWeaponData = PlayerDataUtility.GetWeaponData
+            PlayerDataUtility.GetWeaponData = function(self, playerData, wName)
+                local v, i = origGetWeaponData(self, playerData, wName)
+                local override = SkinChanger.Overrides[wName]
+                if override then
+                    if not v then
+                        v = { Name = wName }
+                    end
+                    if override.Skin and override.Skin ~= "Default" then
+                        v.Skin = { Name = override.Skin }
+                    end
+                    if override.Wrap and override.Wrap ~= "Default" then
+                        v.Wrap = { Name = override.Wrap, Inverted = false }
+                    end
+                    if override.Finisher and override.Finisher ~= "Default" then
+                        v.Finisher = { Name = override.Finisher }
+                    end
+                end
+                return v, i
+            end
+        end
+    end)
+
+    -- 2) Watch local character and weapon switches
+    table.insert(SkinChanger.Connections, RunService.Heartbeat:Connect(function()
+        if not SkinChanger.AutoApply then return end
+        local wName = SkinChanger.GetEquippedWeaponName()
+        if wName and SkinChanger.Overrides[wName] then
+            local ov = SkinChanger.Overrides[wName]
+            if ov.Wrap and ov.Wrap ~= "Default" then
+                local vmFolder = Workspace:FindFirstChild("ViewModels")
+                local fp = vmFolder and vmFolder:FindFirstChild("FirstPerson")
+                if fp and not fp:GetAttribute("SC_WrapApplied_" .. ov.Wrap) then
+                    fp:SetAttribute("SC_WrapApplied_" .. ov.Wrap, true)
+                    SkinChanger.ApplyWrapToModel(fp, ov.Wrap)
+                end
+            end
+        end
+    end))
+
+    -- 3) Custom Finisher trigger on elimination
+    pcall(function()
+        local rep = ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("Replication")
+        local elimRemote = rep and rep:FindFirstChild("Elimination")
+        if elimRemote and elimRemote:IsA("RemoteEvent") then
+            table.insert(SkinChanger.Connections, elimRemote.OnClientEvent:Connect(function(killerPlayer, victimPlayer, extraData)
+                if killerPlayer == LocalPlayer and SkinChanger.GlobalFinisher ~= "Default" then
+                    task.spawn(function()
+                        pcall(function()
+                            local finishersFolder = ReplicatedStorage.Modules:FindFirstChild("Finishers")
+                            local finModule = finishersFolder and finishersFolder:FindFirstChild(SkinChanger.GlobalFinisher)
+                            if finModule and finModule:IsA("ModuleScript") then
+                                local finisher = require(finModule)
+                                if typeof(finisher.Play) == "function" then
+                                    finisher:Play(victimPlayer)
+                                end
+                            end
+                        end)
+                    end)
+                end
+            end))
+        end
+    end)
+
+    SkinChanger.Hooked = true
+
+function SkinChanger.Destroy()
+    for _, conn in ipairs(SkinChanger.Connections) do
+        conn:Disconnect()
+    end
+    table.clear(SkinChanger.Connections)
+    table.clear(SkinChanger.Overrides)
+    SkinChanger.Hooked = false
+
 local GameHook = {}
 GameHook.Connections = {}
 GameHook.PlayerConnections = {}
@@ -1156,21 +2139,34 @@ function GameHook.GetModelForPlayer(player: Player): Model?
     return nil
 end
 
-function GameHook.GetUniqueCharacters(): {[Model]: {player: Player?, isAlly: boolean, isLocal: boolean}}
-    local results: {[Model]: {player: Player?, isAlly: boolean, isLocal: boolean}} = {}
+function GameHook.GetUniqueCharacters(): {[Model]: {player: Player?, fighter: any?, isAlly: boolean, isLocal: boolean}}
+    local results: {[Model]: {player: Player?, fighter: any?, isAlly: boolean, isLocal: boolean}} = {}
+    local fc = GameHook.FighterController
 
     for _, player in ipairs(Players:GetPlayers()) do
-        local m = GameHook.GetModelForPlayer(player)
-        if m and m.Parent and not results[m] then
+        local fighter = nil
+        if fc and typeof(fc.GetFighter) == "function" then
+            local ok, f = pcall(fc.GetFighter, fc, player)
+            if ok and f then fighter = f end
+        end
+
+        local m = nil
+        if fighter and fighter.Entity and fighter.Entity.Model and fighter.Entity.Model.Parent then
+            m = fighter.Entity.Model
+        elseif player.Character and player.Character.Parent then
+            m = player.Character
+        end
+
+        if m and not results[m] then
             results[m] = {
                 player = player,
+                fighter = fighter,
                 isAlly = GameHook.IsAlly(player),
                 isLocal = (player == LocalPlayer)
             }
         end
     end
 
-    local fc = GameHook.FighterController
     if fc and fc.Objects then
         for _, fighter in pairs(fc.Objects) do
             if fighter.Entity and fighter.Entity.Model and fighter.Entity.Model.Parent then
@@ -1179,6 +2175,7 @@ function GameHook.GetUniqueCharacters(): {[Model]: {player: Player?, isAlly: boo
                     local p = fighter.Player
                     results[m] = {
                         player = p,
+                        fighter = fighter,
                         isAlly = p and GameHook.IsAlly(p) or false,
                         isLocal = (p == LocalPlayer)
                     }
@@ -1524,6 +2521,7 @@ local function buildUI(onUnload: () -> ())
     local Tabs = {
         ESP = Window:AddTab("ESP"),
         Tracers = Window:AddTab("Bullet Tracers"),
+        SkinChanger = Window:AddTab("Skin Changer"),
         Settings = Window:AddTab("Settings"),
     }
 
@@ -1751,6 +2749,108 @@ local function buildUI(onUnload: () -> ())
         end,
     })
 
+    local scCfg = Config.Visuals.SkinChanger
+    local WeaponBox = Tabs.SkinChanger:AddLeftGroupbox("Weapon & Skin")
+    local CosmeticsBox = Tabs.SkinChanger:AddRightGroupbox("Wrap & Finisher")
+
+    local weaponsList = SkinData.Weapons
+    local currentWeapon = scCfg.SelectedWeapon or "Assault Rifle"
+    local initialSkins = (SkinData.SkinsByWeapon and SkinData.SkinsByWeapon[currentWeapon]) or { "Default" }
+
+    WeaponBox:AddDropdown("WeaponDropdown", {
+        Values = weaponsList,
+        Default = 1,
+        Multi = false,
+        Text = "Select Weapon",
+        Tooltip = "Choose weapon to customize",
+        Callback = function(value)
+            scCfg.SelectedWeapon = value
+            local newSkins = (SkinData.SkinsByWeapon and SkinData.SkinsByWeapon[value]) or { "Default" }
+            local globalOptions = (typeof(getgenv) == "function" and getgenv().Options) or _G.Options or {}
+            local skinDrop = globalOptions.SkinDropdown
+            if skinDrop and typeof(skinDrop.SetValues) == "function" then
+                skinDrop:SetValues(newSkins)
+                skinDrop:SetValue("Default")
+            end
+        end,
+    })
+
+    WeaponBox:AddDropdown("SkinDropdown", {
+        Values = initialSkins,
+        Default = 1,
+        Multi = false,
+        Text = "Select Skin",
+        Tooltip = "Choose skin model for the selected weapon",
+        Callback = function(value)
+            scCfg.SelectedSkin = value
+        end,
+    })
+
+    WeaponBox:AddButton({
+        Text = "Apply Skin",
+        DoubleClick = false,
+        Tooltip = "Apply selected skin to weapon",
+        Func = function()
+            SkinChanger.Apply(scCfg.SelectedWeapon, scCfg.SelectedSkin, nil, nil)
+            Library:Notify(string.format("Applied skin %s to %s", scCfg.SelectedSkin, scCfg.SelectedWeapon), 3)
+        end,
+    })
+
+    WeaponBox:AddButton({
+        Text = "Apply All (Skin, Wrap & Finisher)",
+        DoubleClick = false,
+        Tooltip = "Equip all chosen cosmetics simultaneously",
+        Func = function()
+            SkinChanger.Apply(scCfg.SelectedWeapon, scCfg.SelectedSkin, scCfg.SelectedWrap, scCfg.SelectedFinisher)
+            Library:Notify(string.format("Applied cosmetics to %s!", scCfg.SelectedWeapon), 3)
+        end,
+    })
+
+    WeaponBox:AddToggle("AutoApplyToggle", {
+        Text = "Auto-Apply on Weapon Equip",
+        Default = scCfg.AutoApply,
+        Tooltip = "Automatically apply cosmetics when equipping weapons",
+        Callback = function(value)
+            scCfg.AutoApply = value
+            SkinChanger.AutoApply = value
+        end,
+    })
+
+    local wrapsList = SkinData.Wraps
+    local finishersList = SkinData.Finishers
+
+    CosmeticsBox:AddDropdown("WrapDropdown", {
+        Values = wrapsList,
+        Default = 1,
+        Multi = false,
+        Text = "Select Wrap",
+        Tooltip = "Choose wrap texture for the selected weapon",
+        Callback = function(value)
+            scCfg.SelectedWrap = value
+        end,
+    })
+
+    CosmeticsBox:AddDropdown("FinisherDropdown", {
+        Values = finishersList,
+        Default = 1,
+        Multi = false,
+        Text = "Select Finisher",
+        Tooltip = "Choose finisher played on enemy elimination",
+        Callback = function(value)
+            scCfg.SelectedFinisher = value
+        end,
+    })
+
+    CosmeticsBox:AddButton({
+        Text = "Apply Wrap & Finisher",
+        DoubleClick = false,
+        Tooltip = "Apply wrap and finisher to weapon",
+        Func = function()
+            SkinChanger.Apply(scCfg.SelectedWeapon, nil, scCfg.SelectedWrap, scCfg.SelectedFinisher)
+            Library:Notify(string.format("Applied wrap & finisher to %s", scCfg.SelectedWeapon), 3)
+        end,
+    })
+
     local MenuBox = Tabs.Settings:AddLeftGroupbox("Menu Settings")
 
     local KeyLabel = MenuBox:AddLabel("Menu Keybind")
@@ -1761,7 +2861,16 @@ local function buildUI(onUnload: () -> ())
         Callback = function()
         end,
     })
-    Library.ToggleKeybind = Library.Options and Library.Options.MenuKeyPicker
+    local globalOptions = (typeof(getgenv) == "function" and getgenv().Options) or _G.Options or {}
+    Library.ToggleKeybind = globalOptions.MenuKeyPicker
+
+    local UserInputService = game:GetService("UserInputService")
+    UserInputService.InputBegan:Connect(function(input, _)
+        local pickerVal = (globalOptions.MenuKeyPicker and globalOptions.MenuKeyPicker.Value) or "RightShift"
+        if input.KeyCode.Name == pickerVal or input.KeyCode == Enum.KeyCode.RightShift or input.KeyCode == Enum.KeyCode.RightControl or input.KeyCode == Enum.KeyCode.Insert then
+            task.spawn(Library.Toggle)
+        end
+    end)
 
     MenuBox:AddDropdown("ThemeDropdown", {
         Values = { "Default Dark", "Blood Crimson", "Toxic Emerald", "Cyberpunk Violet", "Midnight Sapphire" },
@@ -1794,7 +2903,7 @@ local function buildUI(onUnload: () -> ())
         end
     end)
 
-    Library:Notify("Rivals Hub loaded (Press RightShift to show menu)", 4)
+    Library:Notify("RIVALS HUB Loaded! Press [RightShift] or [Insert] to toggle menu", 6)
 
     return {
         Library = Library,
@@ -1814,6 +2923,9 @@ local App = {
 
 function App.Destroy()
     GameHook.Destroy()
+    if SkinChanger and SkinChanger.Destroy then
+        pcall(SkinChanger.Destroy)
+    end
     if App.UI and App.UI.Library and App.UI.Library.Unload then
         pcall(App.UI.Library.Unload)
     end
@@ -1825,6 +2937,9 @@ end
 env.RivalsHubInstance = App
 
 GameHook.Init()
+if SkinChanger and SkinChanger.HookGame then
+    SkinChanger.HookGame()
+end
 App.UI = buildUI(function()
     App.Destroy()
 end)

@@ -38,7 +38,7 @@ local Themes = {
     },
 }
 
-function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, Chams: any, onUnload: () -> ())
+function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, Chams: any, ESP2D: any, SkinChanger: any, SkinData: any, onUnload: () -> ())
     local env = (typeof(getgenv) == "function" and getgenv()) or _G
     if env.LinoriaLib and typeof(env.LinoriaLib.Unload) == "function" then
         pcall(env.LinoriaLib.Unload)
@@ -83,6 +83,7 @@ function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, Cha
     local Tabs = {
         ESP = Window:AddTab("ESP"),
         Tracers = Window:AddTab("Bullet Tracers"),
+        SkinChanger = Window:AddTab("Skin Changer"),
         Settings = Window:AddTab("Settings"),
     }
 
@@ -337,7 +338,120 @@ function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, Cha
     })
 
     -------------------------------------------------------------------
-    -- TAB 3: Settings
+    -- TAB 3: Skin Changer
+    -------------------------------------------------------------------
+    local scCfg = Config.Visuals.SkinChanger
+    local WeaponBox = Tabs.SkinChanger:AddLeftGroupbox("Weapon & Skin")
+    local CosmeticsBox = Tabs.SkinChanger:AddRightGroupbox("Wrap & Finisher")
+
+    local weaponsList = (SkinData and SkinData.Weapons) or { "Assault Rifle", "Sniper", "Shotgun", "Handgun" }
+    local currentWeapon = scCfg.SelectedWeapon or "Assault Rifle"
+    local initialSkins = (SkinData and SkinData.SkinsByWeapon and SkinData.SkinsByWeapon[currentWeapon]) or { "Default" }
+
+    WeaponBox:AddDropdown("WeaponDropdown", {
+        Values = weaponsList,
+        Default = 1,
+        Multi = false,
+        Text = "Select Weapon",
+        Tooltip = "Choose weapon to customize",
+        Callback = function(value)
+            scCfg.SelectedWeapon = value
+            local newSkins = (SkinData and SkinData.SkinsByWeapon and SkinData.SkinsByWeapon[value]) or { "Default" }
+            local globalOptions = (typeof(getgenv) == "function" and getgenv().Options) or _G.Options or {}
+            local skinDrop = globalOptions.SkinDropdown
+            if skinDrop and typeof(skinDrop.SetValues) == "function" then
+                skinDrop:SetValues(newSkins)
+                skinDrop:SetValue("Default")
+            end
+        end,
+    })
+
+    WeaponBox:AddDropdown("SkinDropdown", {
+        Values = initialSkins,
+        Default = 1,
+        Multi = false,
+        Text = "Select Skin",
+        Tooltip = "Choose skin model for the selected weapon",
+        Callback = function(value)
+            scCfg.SelectedSkin = value
+        end,
+    })
+
+    WeaponBox:AddButton({
+        Text = "Apply Skin",
+        DoubleClick = false,
+        Tooltip = "Apply selected skin to weapon",
+        Func = function()
+            if SkinChanger and SkinChanger.Apply then
+                SkinChanger.Apply(scCfg.SelectedWeapon, scCfg.SelectedSkin, nil, nil)
+                Library:Notify(string.format("Applied skin %s to %s", scCfg.SelectedSkin, scCfg.SelectedWeapon), 3)
+            end
+        end,
+    })
+
+    WeaponBox:AddButton({
+        Text = "Apply All (Skin, Wrap & Finisher)",
+        DoubleClick = false,
+        Tooltip = "Equip all chosen cosmetics simultaneously",
+        Func = function()
+            if SkinChanger and SkinChanger.Apply then
+                SkinChanger.Apply(scCfg.SelectedWeapon, scCfg.SelectedSkin, scCfg.SelectedWrap, scCfg.SelectedFinisher)
+                Library:Notify(string.format("Applied cosmetics to %s!", scCfg.SelectedWeapon), 3)
+            end
+        end,
+    })
+
+    WeaponBox:AddToggle("AutoApplyToggle", {
+        Text = "Auto-Apply on Weapon Equip",
+        Default = scCfg.AutoApply,
+        Tooltip = "Automatically apply cosmetics when equipping weapons",
+        Callback = function(value)
+            scCfg.AutoApply = value
+            if SkinChanger then
+                SkinChanger.AutoApply = value
+            end
+        end,
+    })
+
+    local wrapsList = (SkinData and SkinData.Wraps) or { "Default", "1B Visits", "Glacier", "Pine", "Brimstone" }
+    local finishersList = (SkinData and SkinData.Finishers) or { "Default", "Orbital Strike", "Disintegrate", "BONK!" }
+
+    CosmeticsBox:AddDropdown("WrapDropdown", {
+        Values = wrapsList,
+        Default = 1,
+        Multi = false,
+        Text = "Select Wrap",
+        Tooltip = "Choose wrap texture for the selected weapon",
+        Callback = function(value)
+            scCfg.SelectedWrap = value
+        end,
+    })
+
+    CosmeticsBox:AddDropdown("FinisherDropdown", {
+        Values = finishersList,
+        Default = 1,
+        Multi = false,
+        Text = "Select Finisher",
+        Tooltip = "Choose finisher played on enemy elimination",
+        Callback = function(value)
+            scCfg.SelectedFinisher = value
+        end,
+    })
+
+    CosmeticsBox:AddButton({
+        Text = "Apply Wrap & Finisher",
+        DoubleClick = false,
+        Tooltip = "Apply wrap and finisher to weapon",
+        Func = function()
+            if SkinChanger and SkinChanger.Apply then
+                SkinChanger.Apply(scCfg.SelectedWeapon, nil, scCfg.SelectedWrap, scCfg.SelectedFinisher)
+                Library:Notify(string.format("Applied wrap & finisher to %s", scCfg.SelectedWeapon), 3)
+            end
+        end,
+    })
+
+    -------------------------------------------------------------------
+    -- TAB 4: Settings
     -------------------------------------------------------------------
     local MenuBox = Tabs.Settings:AddLeftGroupbox("Menu Settings")
 
@@ -349,7 +463,16 @@ function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, Cha
         Callback = function()
         end,
     })
-    Library.ToggleKeybind = Library.Options and Library.Options.MenuKeyPicker
+    local globalOptions = (typeof(getgenv) == "function" and getgenv().Options) or _G.Options or {}
+    Library.ToggleKeybind = globalOptions.MenuKeyPicker
+
+    local UserInputService = game:GetService("UserInputService")
+    UserInputService.InputBegan:Connect(function(input, _)
+        local pickerVal = (globalOptions.MenuKeyPicker and globalOptions.MenuKeyPicker.Value) or "RightShift"
+        if input.KeyCode.Name == pickerVal or input.KeyCode == Enum.KeyCode.RightShift or input.KeyCode == Enum.KeyCode.RightControl or input.KeyCode == Enum.KeyCode.Insert then
+            task.spawn(Library.Toggle)
+        end
+    end)
 
     MenuBox:AddDropdown("ThemeDropdown", {
         Values = { "Default Dark", "Blood Crimson", "Toxic Emerald", "Cyberpunk Violet", "Midnight Sapphire" },
@@ -382,7 +505,7 @@ function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, Cha
         end
     end)
 
-    Library:Notify("Rivals Hub loaded (Press RightShift to show menu)", 4)
+    Library:Notify("RIVALS HUB Loaded! Press [RightShift] or [Insert] to toggle menu", 6)
 
     Interface.Library = Library
     Interface.Window = Window

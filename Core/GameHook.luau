@@ -42,21 +42,34 @@ function GameHook.GetModelForPlayer(player: Player): Model?
     return nil
 end
 
-function GameHook.GetUniqueCharacters(): {[Model]: {player: Player?, isAlly: boolean, isLocal: boolean}}
-    local results: {[Model]: {player: Player?, isAlly: boolean, isLocal: boolean}} = {}
+function GameHook.GetUniqueCharacters(): {[Model]: {player: Player?, fighter: any?, isAlly: boolean, isLocal: boolean}}
+    local results: {[Model]: {player: Player?, fighter: any?, isAlly: boolean, isLocal: boolean}} = {}
+    local fc = GameHook.FighterController
 
     for _, player in ipairs(Players:GetPlayers()) do
-        local m = GameHook.GetModelForPlayer(player)
-        if m and m.Parent and not results[m] then
+        local fighter = nil
+        if fc and typeof(fc.GetFighter) == "function" then
+            local ok, f = pcall(fc.GetFighter, fc, player)
+            if ok and f then fighter = f end
+        end
+
+        local m = nil
+        if fighter and fighter.Entity and fighter.Entity.Model and fighter.Entity.Model.Parent then
+            m = fighter.Entity.Model
+        elseif player.Character and player.Character.Parent then
+            m = player.Character
+        end
+
+        if m and not results[m] then
             results[m] = {
                 player = player,
+                fighter = fighter,
                 isAlly = GameHook.IsAlly(player),
                 isLocal = (player == LocalPlayer)
             }
         end
     end
 
-    local fc = GameHook.FighterController
     if fc and fc.Objects then
         for _, fighter in pairs(fc.Objects) do
             if fighter.Entity and fighter.Entity.Model and fighter.Entity.Model.Parent then
@@ -65,6 +78,7 @@ function GameHook.GetUniqueCharacters(): {[Model]: {player: Player?, isAlly: boo
                     local p = fighter.Player
                     results[m] = {
                         player = p,
+                        fighter = fighter,
                         isAlly = p and GameHook.IsAlly(p) or false,
                         isLocal = (p == LocalPlayer)
                     }
