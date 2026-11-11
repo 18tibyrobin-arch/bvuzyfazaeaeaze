@@ -52,11 +52,6 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/18tibyrobin-arch/bvuz
 ├── Visuals/
 │   ├── Aura.luau          # V5 Aura engine with world-space orbs & wings
 │   └── Tracers.luau       # Game-hooked spiral tracer engine
-├── luau_tests/
-│   ├── aura.luau          # Standalone Aura test module
-│   ├── tracers.luau       # Standalone Tracer test module
-│   ├── init.luau          # Modular test harness
-│   └── combined.luau      # Self-contained combined visual test script
 ├── init.luau              # Modular entry point
 ├── main.luau              # Self-contained release bundle
 └── README.md
