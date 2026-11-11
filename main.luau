@@ -1111,22 +1111,29 @@ local function createDebounced(fn, delay)
 end
 
 local function buildUI(onUnload: () -> ())
-    local ok, Rayfield = pcall(function()
-        return loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
-    end)
-    if not ok or not Rayfield then
-        warn("[RivalsHub] Could not load Rayfield UI framework")
-        return nil
+    local env = (typeof(getgenv) == "function" and getgenv()) or _G
+    if env.LinoriaLib and typeof(env.LinoriaLib.Unload) == "function" then
+        pcall(env.LinoriaLib.Unload)
+        env.LinoriaLib = nil
     end
 
-    local Window = Rayfield:CreateWindow({
-        Name = "RIVALS HUB",
-        LoadingTitle = "RIVALS HUB",
-        LoadingSubtitle = "Visuals Client",
-        ConfigurationSaving = {
-            Enabled = false,
-        },
-        KeySystem = false,
+    local Library
+    local ok, res = pcall(function()
+        return loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/Library.lua"))()
+    end)
+    if not ok or not res then
+        warn("[RivalsHub] Failed to load LinoriaLib UI library")
+        return nil
+    end
+    Library = res
+    env.LinoriaLib = Library
+
+    local Window = Library:CreateWindow({
+        Title = "RIVALS HUB",
+        Center = true,
+        AutoShow = true,
+        TabPadding = 8,
+        MenuFadeTime = 0.1,
     })
 
     local esp = Config.Visuals.ESP
@@ -1136,15 +1143,21 @@ local function buildUI(onUnload: () -> ())
         Aura.UpdateColors()
     end, 0.04)
 
-    -- TAB 1: Aura ESP (Sidebar)
-    local ESPTab = Window:CreateTab("Aura ESP", 4483362458)
+    local Tabs = {
+        ESP = Window:AddTab("Aura ESP"),
+        Tracers = Window:AddTab("Bullet Tracers"),
+        Settings = Window:AddTab("Settings"),
+    }
 
-    ESPTab:CreateSection("ESP")
+    -------------------------------------------------------------------
+    -- TAB 1: Aura ESP
+    -------------------------------------------------------------------
+    local ESPBox = Tabs.ESP:AddLeftGroupbox("ESP Controls")
 
-    ESPTab:CreateToggle({
-        Name = "Aura",
-        CurrentValue = esp.Aura,
-        Flag = "AuraToggle",
+    ESPBox:AddToggle("AuraToggle", {
+        Text = "Aura",
+        Default = esp.Aura,
+        Tooltip = "Toggle character aura visuals",
         Callback = function(value)
             esp.Aura = value
             Aura.SetVisible(value)
@@ -1154,105 +1167,102 @@ local function buildUI(onUnload: () -> ())
         end,
     })
 
-    ESPTab:CreateToggle({
-        Name = "Through Walls",
-        CurrentValue = esp.ThroughWalls,
-        Flag = "ThroughWallsToggle",
+    ESPBox:AddToggle("ThroughWallsToggle", {
+        Text = "Through Walls",
+        Default = esp.ThroughWalls,
+        Tooltip = "Show highlights through geometry (AlwaysOnTop vs Occluded)",
         Callback = function(value)
             esp.ThroughWalls = value
             Aura.UpdateThroughWalls(value)
         end,
     })
 
-    ESPTab:CreateToggle({
-        Name = "Include Local Player",
-        CurrentValue = esp.IncludeLocal,
-        Flag = "IncludeLocalToggle",
+    ESPBox:AddToggle("IncludeLocalToggle", {
+        Text = "Include Local Player",
+        Default = esp.IncludeLocal,
+        Tooltip = "Render aura on your own character",
         Callback = function(value)
             esp.IncludeLocal = value
             GameHook.RefreshAuras()
         end,
     })
 
-    ESPTab:CreateSection("Colors")
+    local ColorBox = Tabs.ESP:AddRightGroupbox("Color Palette")
 
-    ESPTab:CreateColorPicker({
-        Name = "Local Color",
-        Color = esp.Colors.Local,
-        Flag = "LocalColorPicker",
+    ColorBox:AddLabel("Local Color"):AddColorPicker("LocalColorPicker", {
+        Default = esp.Colors.Local,
+        Title = "Local Color",
         Callback = function(value)
             esp.Colors.Local = value
             debouncedUpdateColors()
         end,
     })
 
-    ESPTab:CreateColorPicker({
-        Name = "Ally Color",
-        Color = esp.Colors.Ally,
-        Flag = "AllyColorPicker",
+    ColorBox:AddLabel("Ally Color"):AddColorPicker("AllyColorPicker", {
+        Default = esp.Colors.Ally,
+        Title = "Ally Color",
         Callback = function(value)
             esp.Colors.Ally = value
             debouncedUpdateColors()
         end,
     })
 
-    ESPTab:CreateColorPicker({
-        Name = "Enemy Color",
-        Color = esp.Colors.Enemy,
-        Flag = "EnemyColorPicker",
+    ColorBox:AddLabel("Enemy Color"):AddColorPicker("EnemyColorPicker", {
+        Default = esp.Colors.Enemy,
+        Title = "Enemy Color",
         Callback = function(value)
             esp.Colors.Enemy = value
             debouncedUpdateColors()
         end,
     })
 
-    ESPTab:CreateSection("Modifiers")
+    local ModBox = Tabs.ESP:AddLeftGroupbox("Customization")
 
-    ESPTab:CreateToggle({
-        Name = "Angel Wings",
-        CurrentValue = esp.UseWings,
-        Flag = "AngelWingsToggle",
+    ModBox:AddToggle("AngelWingsToggle", {
+        Text = "Angel Wings",
+        Default = esp.UseWings,
+        Tooltip = "Toggle flapping wings on self",
         Callback = function(value)
             esp.UseWings = value
             GameHook.RefreshAuras()
         end,
     })
 
-    ESPTab:CreateSlider({
-        Name = "Orb Count",
-        Range = {1, 5},
-        Increment = 1,
-        Suffix = "orbs",
-        CurrentValue = esp.OrbCount,
-        Flag = "OrbCountSlider",
+    ModBox:AddSlider("OrbCountSlider", {
+        Text = "Orb Count",
+        Default = esp.OrbCount,
+        Min = 1,
+        Max = 5,
+        Rounding = 0,
+        Suffix = " orbs",
         Callback = function(value)
-            esp.OrbCount = value
+            esp.OrbCount = math.floor(value)
             GameHook.RefreshAuras()
         end,
     })
 
-    ESPTab:CreateSlider({
-        Name = "Intensity",
-        Range = {0.5, 2.5},
-        Increment = 0.1,
+    ModBox:AddSlider("IntensitySlider", {
+        Text = "Intensity",
+        Default = esp.Intensity,
+        Min = 0.5,
+        Max = 2.5,
+        Rounding = 1,
         Suffix = "x",
-        CurrentValue = esp.Intensity,
-        Flag = "IntensitySlider",
         Callback = function(value)
             esp.Intensity = value
             debouncedUpdateColors()
         end,
     })
 
-    -- TAB 2: Bullet Tracers (Sidebar)
-    local TracersTab = Window:CreateTab("Bullet Tracers", 4483362458)
+    -------------------------------------------------------------------
+    -- TAB 2: Bullet Tracers
+    -------------------------------------------------------------------
+    local TracerBox = Tabs.Tracers:AddLeftGroupbox("Bullet Tracers")
 
-    TracersTab:CreateSection("Bullet Tracers")
-
-    TracersTab:CreateToggle({
-        Name = "Tracers",
-        CurrentValue = tr.Enabled,
-        Flag = "TracersToggle",
+    TracerBox:AddToggle("TracersToggle", {
+        Text = "Bullet Tracers",
+        Default = tr.Enabled,
+        Tooltip = "Hook real gunshots and render spiral tracers",
         Callback = function(value)
             tr.Enabled = value
             if not value then
@@ -1261,105 +1271,101 @@ local function buildUI(onUnload: () -> ())
         end,
     })
 
-    TracersTab:CreateToggle({
-        Name = "Fallback Click Raycast",
-        CurrentValue = tr.FallbackCameraRaycast,
-        Flag = "FallbackRaycastToggle",
+    TracerBox:AddToggle("FallbackRaycastToggle", {
+        Text = "Click Fallback Raycast",
+        Default = tr.FallbackCameraRaycast,
+        Tooltip = "Fires a tracer on mouse click if gun effect isn't present",
         Callback = function(value)
             tr.FallbackCameraRaycast = value
         end,
     })
 
-    TracersTab:CreateSlider({
-        Name = "Duration",
-        Range = {0.1, 2.0},
-        Increment = 0.05,
+    TracerBox:AddSlider("DurationSlider", {
+        Text = "Duration",
+        Default = tr.Duration or 0.4,
+        Min = 0.1,
+        Max = 2.0,
+        Rounding = 2,
         Suffix = "s",
-        CurrentValue = tr.Duration or 0.4,
-        Flag = "DurationSlider",
         Callback = function(value)
             tr.Duration = value
         end,
     })
 
-    TracersTab:CreateSection("Colors")
+    local TracerColorBox = Tabs.Tracers:AddRightGroupbox("Colors & Dynamics")
 
-    TracersTab:CreateColorPicker({
-        Name = "Friendly Color",
-        Color = tr.FriendlyColor,
-        Flag = "FriendlyColorPicker",
+    TracerColorBox:AddLabel("Friendly Color"):AddColorPicker("FriendlyColorPicker", {
+        Default = tr.FriendlyColor,
+        Title = "Friendly Color",
         Callback = function(value)
             tr.FriendlyColor = value
         end,
     })
 
-    TracersTab:CreateColorPicker({
-        Name = "Enemy Color",
-        Color = tr.EnemyColor,
-        Flag = "EnemyColorPicker",
+    TracerColorBox:AddLabel("Enemy Color"):AddColorPicker("EnemyColorPicker", {
+        Default = tr.EnemyColor,
+        Title = "Enemy Color",
         Callback = function(value)
             tr.EnemyColor = value
         end,
     })
 
-    TracersTab:CreateSection("Spiral Physics")
-
-    TracersTab:CreateSlider({
-        Name = "Spiral Speed",
-        Range = {200, 800},
-        Increment = 20,
-        Suffix = "studs/s",
-        CurrentValue = tr.SpiralSpeed or 420,
-        Flag = "SpiralSpeedSlider",
+    TracerColorBox:AddSlider("SpiralSpeedSlider", {
+        Text = "Spiral Speed",
+        Default = tr.SpiralSpeed or 420,
+        Min = 200,
+        Max = 800,
+        Rounding = 0,
+        Suffix = " studs/s",
         Callback = function(value)
-            tr.SpiralSpeed = value
+            tr.SpiralSpeed = math.floor(value)
         end,
     })
 
-    TracersTab:CreateSlider({
-        Name = "Spiral Radius",
-        Range = {0.1, 0.8},
-        Increment = 0.02,
-        Suffix = "studs",
-        CurrentValue = tr.SpiralRadius or 0.32,
-        Flag = "SpiralRadiusSlider",
+    TracerColorBox:AddSlider("SpiralRadiusSlider", {
+        Text = "Spiral Radius",
+        Default = tr.SpiralRadius or 0.32,
+        Min = 0.1,
+        Max = 0.8,
+        Rounding = 2,
+        Suffix = " studs",
         Callback = function(value)
             tr.SpiralRadius = value
         end,
     })
 
-    -- TAB 3: Settings (Sidebar)
-    local SettingsTab = Window:CreateTab("Settings", 4483362458)
+    -------------------------------------------------------------------
+    -- TAB 3: Settings
+    -------------------------------------------------------------------
+    local MenuBox = Tabs.Settings:AddLeftGroupbox("Menu Settings")
 
-    SettingsTab:CreateSection("Interface")
+    MenuBox:AddLabel("Toggle Keybind: RightShift / RightControl")
 
-    SettingsTab:CreateKeybind({
-        Name = "Toggle Menu Key",
-        CurrentKeybind = "RightShift",
-        HoldToInteract = false,
-        Flag = "MenuKeybind",
-        Callback = function()
+    MenuBox:AddButton({
+        Text = "Unload Hub",
+        Func = function()
+            Library:Unload()
         end,
     })
 
-    SettingsTab:CreateButton({
-        Name = "Unload Hub",
-        Callback = function()
-            if typeof(onUnload) == "function" then
-                onUnload()
-            end
-        end,
-    })
+    local InfoBox = Tabs.Settings:AddRightGroupbox("Diagnostics")
+    InfoBox:AddLabel("Engine: Zero-Allocation Luau")
+    InfoBox:AddLabel("Hooks: TracerEffect + FighterController")
+    InfoBox:AddLabel("Status: Running at full FPS")
 
-    SettingsTab:CreateSection("Diagnostics")
+    Library:SetWatermark("RIVALS HUB | Zero-Lag Edition")
+    Library:SetWatermarkVisibility(true)
 
-    SettingsTab:CreateParagraph({
-        Title = "Rivals Visuals Client",
-        Content = "Optimized zero-allocation rendering engine.\nHooks: TracerEffect (Weapons) + FighterController (Duels).",
-    })
+    Library:OnUnload(function()
+        if typeof(onUnload) == "function" then
+            onUnload()
+        end
+    end)
+
+    Library:Notify("Rivals Hub loaded successfully!", 3)
 
     return {
-        Rayfield = Rayfield,
+        Library = Library,
         Window = Window,
     }
 end
@@ -1377,8 +1383,8 @@ local App = {
 
 function App.Destroy()
     GameHook.Destroy()
-    if App.UI and App.UI.Rayfield and App.UI.Rayfield.Destroy then
-        pcall(App.UI.Rayfield.Destroy)
+    if App.UI and App.UI.Library and App.UI.Library.Unload then
+        pcall(App.UI.Library.Unload)
     end
     if env.RivalsHubInstance == App then
         env.RivalsHubInstance = nil

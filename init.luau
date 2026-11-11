@@ -51,8 +51,8 @@ function App.Destroy()
     if App.GameHook then
         App.GameHook.Destroy(App.Config, App.Aura, App.Tracers)
     end
-    if App.Interface and App.Interface.Rayfield and App.Interface.Rayfield.Destroy then
-        pcall(App.Interface.Rayfield.Destroy)
+    if App.Interface and App.Interface.Library and App.Interface.Library.Unload then
+        pcall(App.Interface.Library.Unload)
     end
     if env.RivalsHubInstance == App then
         env.RivalsHubInstance = nil
