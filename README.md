@@ -12,12 +12,6 @@ Run this in your executor (menu displays on injection, press `RightShift` or `In
 loadstring(game:HttpGet("https://raw.githubusercontent.com/18tibyrobin-arch/bvuzyfazaeaeaze/main/main.luau?t=" .. os.time()))()
 ```
 
-Or using the modular loader:
-
-```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/18tibyrobin-arch/bvuzyfazaeaeaze/main/init.luau?t=" .. os.time()))()
-```
-
 ---
 
 ## Navigation & Controls
@@ -89,23 +83,9 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/18tibyrobin-arch/bvuz
 
 ---
 
-## Directory Structure
+## Release Structure
 
 ```text
-├── Core/
-│   ├── Config.luau        # Central configuration table
-│   ├── GameHook.luau      # FighterController and TracerEffect hooking
-│   ├── SaveManager.luau   # Config Manager (save/load/overwrite/autoload)
-│   └── SkinData.luau      # Catalog database for weapons, skins, wraps, finishers
-├── UI/
-│   └── Interface.luau     # LinoriaLib UI setup with 4 tabs & 5 themes
-├── Visuals/
-│   ├── Aura.luau          # V5 Aura engine with world-space orbs & dual flames
-│   ├── Chams.luau         # Body highlight chams engine
-│   ├── ESP2D.luau         # 2D Box, Skeleton, Name, Health, Distance, Weapon
-│   ├── SkinChanger.luau   # Real-time client skin, wrap, and finisher engine
-│   └── Tracers.luau       # Game-hooked spiral tracer engine
-├── init.luau              # Modular entry point
-├── main.luau              # Self-contained release bundle
-└── README.md
+├── main.luau              # Self-contained standalone client release
+└── README.md              # Documentation & loadstrings
 ```
