@@ -18,7 +18,7 @@ local function loadModule(relPath: string)
             return game:HttpGet(url)
         end)
         if okHttp and content and #content > 0 then
-            local loaded, err = loadstring(content)
+            local loaded = loadstring(content)
             if loaded then
                 return loaded()
             end
@@ -62,6 +62,8 @@ end
 env.RivalsHubInstance = App
 
 GameHook.Init(Config, Aura, Tracers)
-App.Interface = Interface.Init(Config, Aura, Tracers, GameHook)
+App.Interface = Interface.Init(Config, Aura, Tracers, GameHook, function()
+    App.Destroy()
+end)
 
 return App

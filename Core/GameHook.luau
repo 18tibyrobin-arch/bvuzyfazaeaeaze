@@ -43,12 +43,77 @@ function GameHook.GetModelForPlayer(player: Player): Model?
     return nil
 end
 
+function GameHook.GetUniqueCharacters(): {[Model]: {player: Player?, isAlly: boolean, isLocal: boolean}}
+    local results: {[Model]: {player: Player?, isAlly: boolean, isLocal: boolean}} = {}
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        local m = GameHook.GetModelForPlayer(player)
+        if m and m.Parent and not results[m] then
+            results[m] = {
+                player = player,
+                isAlly = GameHook.IsAlly(player),
+                isLocal = (player == LocalPlayer)
+            }
+        end
+    end
+
+    local fc = GameHook.FighterController
+    if fc and fc.Objects then
+        for _, fighter in pairs(fc.Objects) do
+            if fighter.Entity and fighter.Entity.Model and fighter.Entity.Model.Parent then
+                local m = fighter.Entity.Model
+                if not results[m] then
+                    local p = fighter.Player
+                    results[m] = {
+                        player = p,
+                        isAlly = p and GameHook.IsAlly(p) or false,
+                        isLocal = (p == LocalPlayer)
+                    }
+                end
+            end
+        end
+    end
+
+    return results
+end
+
+function GameHook.RefreshAuras(Config: any, Aura: any)
+    if not Config.Visuals.ESP.Aura then
+        Aura.SetVisible(false)
+        return
+    end
+
+    Aura.SetVisible(true)
+    local chars = GameHook.GetUniqueCharacters()
+
+    for m, info in pairs(chars) do
+        if info.isLocal and not Config.Visuals.ESP.IncludeLocal then
+            Aura.Remove(m)
+        else
+            if not Aura.Tracked[m] then
+                Aura.Apply(m, info.isAlly, Config, Config.Tag)
+            end
+        end
+    end
+
+    for m in pairs(Aura.Tracked) do
+        if not chars[m] then
+            Aura.Remove(m)
+        end
+    end
+
+    Aura.UpdateColors(Config)
+    Aura.UpdateThroughWalls(Config.Visuals.ESP.ThroughWalls)
+end
+
 function GameHook.HookTracers(Config: any, Tracers: any)
     if GameHook.TracerHooked then return end
 
     task.spawn(function()
         local tracerModule
-        while not tracerModule do
+        local attempts = 0
+        while not tracerModule and attempts < 20 do
+            attempts += 1
             local playerScripts = LocalPlayer:FindFirstChild("PlayerScripts")
             local modules = playerScripts and playerScripts:FindFirstChild("Modules")
             local tm = modules and modules:FindFirstChild("TracerEffect")
@@ -67,17 +132,19 @@ function GameHook.HookTracers(Config: any, Tracers: any)
             tracerModule.Play = function(self, p9, p10, p11)
                 if Config.Visuals.Tracers.Enabled then
                     task.spawn(function()
-                        local u12, _, u14 = self:VerifyTracerData(p9, p10, p11)
-                        if u14 and u14.MuzzlePosition and u12 and u12.RaycastResults then
-                            local isEnemy = u12.IsEnemy or false
-                            for _, res in pairs(u12.RaycastResults) do
-                                local startPos = res.StartPosition or u14.MuzzlePosition
-                                local hitPos = res.Position
-                                if startPos and hitPos then
-                                    Tracers.FireTracer(startPos, hitPos, isEnemy, Config, Config.Tag)
+                        pcall(function()
+                            local u12, _, u14 = self:VerifyTracerData(p9, p10, p11)
+                            if u14 and u14.MuzzlePosition and u12 and u12.RaycastResults then
+                                local isEnemy = u12.IsEnemy or false
+                                for _, res in pairs(u12.RaycastResults) do
+                                    local startPos = res.StartPosition or u14.MuzzlePosition
+                                    local hitPos = res.Position
+                                    if startPos and hitPos then
+                                        Tracers.FireTracer(startPos, hitPos, isEnemy, Config, Config.Tag)
+                                    end
                                 end
                             end
-                        end
+                        end)
                     end)
                 end
                 return originalPlay(self, p9, p10, p11)
@@ -95,56 +162,15 @@ function GameHook.Init(Config: any, Aura: any, Tracers: any)
 
     GameHook.HookTracers(Config, Tracers)
 
-    local function updatePlayer(player: Player)
-        if not player or not Aura then return end
-        local isLocal = (player == LocalPlayer)
-        if isLocal and not Config.Visuals.ESP.IncludeLocal then
-            local oldModel = GameHook.GetModelForPlayer(player)
-            if oldModel then
-                Aura.Remove(oldModel, Config.Tag)
-            end
-            return
-        end
-        local m = GameHook.GetModelForPlayer(player)
-        if m then
-            Aura.Apply(m, GameHook.IsAlly(player), Config, Config.Tag)
-        end
-    end
-
-    local function watchFighter(fighter: any)
-        if not fighter or not Aura then return end
-        local conns = {}
-
-        local function onEntity(entity: any)
-            if not entity or not entity.Model then return end
-            local m = entity.Model
-            local hum = m:WaitForChild("Humanoid", 4)
-            local root = m:WaitForChild("HumanoidRootPart", 4)
-            if not hum or not root then return end
-            task.wait(0.05)
-            if not m.Parent then return end
-            local p = fighter.Player
-            if p == LocalPlayer and not Config.Visuals.ESP.IncludeLocal then
-                return
-            end
-            Aura.Apply(m, p and GameHook.IsAlly(p) or false, Config, Config.Tag)
-        end
-
-        if fighter.EntityAdded then
-            table.insert(conns, fighter.EntityAdded:Connect(onEntity))
-        end
-        if fighter.EntityRemoved then
-            table.insert(conns, fighter.EntityRemoved:Connect(function(entity)
-                if entity and entity.Model then
-                    Aura.Remove(entity.Model, Config.Tag)
-                end
-            end))
-        end
-        if fighter.Entity and fighter.Entity.Model then
-            task.spawn(onEntity, fighter.Entity)
-        end
-
-        return conns
+    local function onCharacterModel(m: Model?, isAlly: boolean, isLocal: boolean)
+        if not m or not m.Parent or not Config.Visuals.ESP.Aura then return end
+        if isLocal and not Config.Visuals.ESP.IncludeLocal then return end
+        local hum = m:WaitForChild("Humanoid", 3)
+        local root = m:WaitForChild("HumanoidRootPart", 3)
+        if not hum or not root then return end
+        task.wait(0.04)
+        if not m.Parent then return end
+        Aura.Apply(m, isAlly, Config, Config.Tag)
     end
 
     local function watchPlayer(player: Player)
@@ -156,40 +182,23 @@ function GameHook.Init(Config: any, Aura: any, Tracers: any)
 
         local pConns = {}
         GameHook.PlayerConnections[player] = pConns
+        local isLocal = (player == LocalPlayer)
 
-        local function handleChar(char: Model?)
-            if not char or not Aura then return end
-            local hum = char:WaitForChild("Humanoid", 5)
-            local root = char:WaitForChild("HumanoidRootPart", 5)
-            if not hum or not root then return end
-            task.wait(0.05)
-            if not char.Parent then return end
-            if player == LocalPlayer and not Config.Visuals.ESP.IncludeLocal then
-                return
-            end
-            Aura.Apply(char, GameHook.IsAlly(player), Config, Config.Tag)
-
-            local diedConn
-            diedConn = hum.Died:Connect(function()
-                if diedConn then diedConn:Disconnect() end
-                Aura.Remove(char, Config.Tag)
-            end)
-            table.insert(pConns, diedConn)
-        end
-
-        table.insert(pConns, player.CharacterAdded:Connect(handleChar))
+        table.insert(pConns, player.CharacterAdded:Connect(function(char)
+            onCharacterModel(char, GameHook.IsAlly(player), isLocal)
+        end))
         table.insert(pConns, player.CharacterRemoving:Connect(function(char)
-            if Aura then Aura.Remove(char, Config.Tag) end
+            Aura.Remove(char)
         end))
         table.insert(pConns, player:GetAttributeChangedSignal("TeamID"):Connect(function()
-            updatePlayer(player)
+            GameHook.RefreshAuras(Config, Aura)
         end))
         table.insert(pConns, player:GetPropertyChangedSignal("Team"):Connect(function()
-            updatePlayer(player)
+            GameHook.RefreshAuras(Config, Aura)
         end))
 
         if player.Character and player.Character.Parent then
-            task.spawn(handleChar, player.Character)
+            task.spawn(onCharacterModel, player.Character, GameHook.IsAlly(player), isLocal)
         end
     end
 
@@ -201,8 +210,8 @@ function GameHook.Init(Config: any, Aura: any, Tracers: any)
             GameHook.PlayerConnections[player] = nil
         end
         local m = GameHook.GetModelForPlayer(player)
-        if m and Aura then
-            Aura.Remove(m, Config.Tag)
+        if m then
+            Aura.Remove(m)
         end
     end
 
@@ -212,43 +221,43 @@ function GameHook.Init(Config: any, Aura: any, Tracers: any)
 
     table.insert(GameHook.Connections, Players.PlayerAdded:Connect(watchPlayer))
     table.insert(GameHook.Connections, Players.PlayerRemoving:Connect(unwatchPlayer))
-
-    local function refreshAll()
-        for _, p in ipairs(Players:GetPlayers()) do
-            updatePlayer(p)
-        end
-        local fc = GameHook.FighterController
-        if fc and fc.Objects then
-            for _, f in pairs(fc.Objects) do
-                if f.Entity and f.Entity.Model and f.Entity.Model.Parent then
-                    local p = f.Player
-                    Aura.Apply(f.Entity.Model, p and GameHook.IsAlly(p) or false, Config, Config.Tag)
-                end
-            end
-        end
-    end
-    GameHook.RefreshAuras = refreshAll
-
-    table.insert(GameHook.Connections, LocalPlayer:GetAttributeChangedSignal("TeamID"):Connect(refreshAll))
-    table.insert(GameHook.Connections, LocalPlayer:GetPropertyChangedSignal("Team"):Connect(refreshAll))
+    table.insert(GameHook.Connections, LocalPlayer:GetAttributeChangedSignal("TeamID"):Connect(function()
+        GameHook.RefreshAuras(Config, Aura)
+    end))
+    table.insert(GameHook.Connections, LocalPlayer:GetPropertyChangedSignal("Team"):Connect(function()
+        GameHook.RefreshAuras(Config, Aura)
+    end))
 
     local fc = GameHook.FighterController
     if fc then
-        if fc.Objects then
-            for _, fighter in pairs(fc.Objects) do
-                local conns = watchFighter(fighter)
-                if conns then
-                    for _, c in ipairs(conns) do table.insert(GameHook.Connections, c) end
-                end
+        local function watchFighter(fighter: any)
+            if not fighter then return end
+            if fighter.EntityAdded then
+                table.insert(GameHook.Connections, fighter.EntityAdded:Connect(function(entity)
+                    if entity and entity.Model then
+                        local p = fighter.Player
+                        onCharacterModel(entity.Model, p and GameHook.IsAlly(p) or false, p == LocalPlayer)
+                    end
+                end))
+            end
+            if fighter.EntityRemoved then
+                table.insert(GameHook.Connections, fighter.EntityRemoved:Connect(function(entity)
+                    if entity and entity.Model then
+                        Aura.Remove(entity.Model)
+                    end
+                end))
+            end
+            if fighter.Entity and fighter.Entity.Model then
+                local p = fighter.Player
+                task.spawn(onCharacterModel, fighter.Entity.Model, p and GameHook.IsAlly(p) or false, p == LocalPlayer)
             end
         end
+
+        if fc.Objects then
+            for _, f in pairs(fc.Objects) do watchFighter(f) end
+        end
         if fc.ObjectAdded then
-            table.insert(GameHook.Connections, fc.ObjectAdded:Connect(function(fighter)
-                local conns = watchFighter(fighter)
-                if conns then
-                    for _, c in ipairs(conns) do table.insert(GameHook.Connections, c) end
-                end
-            end))
+            table.insert(GameHook.Connections, fc.ObjectAdded:Connect(watchFighter))
         end
     end
 
@@ -269,11 +278,11 @@ function GameHook.Init(Config: any, Aura: any, Tracers: any)
     local lastTracerAt = 0
     table.insert(GameHook.Connections, RunService.RenderStepped:Connect(function(dt)
         t += dt
-        if Aura and Config.Visuals.ESP.Aura then
+        if Config.Visuals.ESP.Aura then
             Aura.Step(t, dt, Config)
         end
 
-        if Tracers and Config.Visuals.Tracers.Enabled then
+        if Config.Visuals.Tracers.Enabled then
             if Config.Visuals.Tracers.FallbackCameraRaycast and GameHook.FiringHeld then
                 if t - lastTracerAt >= (Config.Visuals.Tracers.Interval or 0.11) then
                     lastTracerAt = t
@@ -287,19 +296,21 @@ function GameHook.Init(Config: any, Aura: any, Tracers: any)
     local scanTimer = 0
     table.insert(GameHook.Connections, RunService.Heartbeat:Connect(function(dt)
         scanTimer += dt
-        if scanTimer < 0.8 then return end
+        if scanTimer < 1.5 then return end
         scanTimer = 0
-        if not Aura or not Config.Visuals.ESP.Aura then return end
+        if not Config.Visuals.ESP.Aura then return end
 
-        for _, player in ipairs(Players:GetPlayers()) do
-            local m = GameHook.GetModelForPlayer(player)
-            if m and m.Parent and not Aura.Tracked[m] then
-                if player ~= LocalPlayer or Config.Visuals.ESP.IncludeLocal then
-                    Aura.Apply(m, GameHook.IsAlly(player), Config, Config.Tag)
+        local chars = GameHook.GetUniqueCharacters()
+        for m, info in pairs(chars) do
+            if not Aura.Tracked[m] then
+                if not info.isLocal or Config.Visuals.ESP.IncludeLocal then
+                    Aura.Apply(m, info.isAlly, Config, Config.Tag)
                 end
             end
         end
     end))
+
+    GameHook.RefreshAuras(Config, Aura)
 end
 
 function GameHook.Destroy(Config: any, Aura: any, Tracers: any)
@@ -318,13 +329,13 @@ function GameHook.Destroy(Config: any, Aura: any, Tracers: any)
 
     if Aura then
         for model in pairs(Aura.Tracked) do
-            Aura.Remove(model, Config.Tag)
+            Aura.Remove(model)
         end
         table.clear(Aura.Tracked)
     end
 
     if Tracers then
-        Tracers.Cleanup(Config.Tag)
+        Tracers.Cleanup()
     end
 end
 

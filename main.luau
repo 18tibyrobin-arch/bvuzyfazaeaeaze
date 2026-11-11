@@ -1,6 +1,6 @@
 --[[
-    RIVALS HUB - Visuals
-    Self-contained single-file bundle for executor loadstring execution.
+    RIVALS HUB - Visuals Client (High Performance Edition)
+    Zero-allocation in-place rendering engine.
 ]]
 
 local Workspace = game:GetService("Workspace")
@@ -61,13 +61,8 @@ local Config = {
 }
 
 -------------------------------------------------------------------
--- Common Helpers
+-- Helpers
 -------------------------------------------------------------------
-local function tagInstance(inst: Instance): Instance
-    inst:SetAttribute(Config.Tag, true)
-    return inst
-end
-
 local function findPart(parent: Instance, name: string): BasePart?
     local inst = parent:FindFirstChild(name)
     if inst and inst:IsA("BasePart") then return inst end
@@ -93,16 +88,24 @@ local function getLimb(character: Model, limbName: string): BasePart?
     return findPart(character, limbName)
 end
 
-local function buildAttachment(name: string, parent: Instance, offset: Vector3?): Attachment
+local function computeColorPalette(mainColor: Color3)
+    local h, s, v = mainColor:ToHSV()
+    local brightColor = Color3.fromHSV(h, math.clamp(s * 0.45, 0, 1), math.clamp(v * 1.25, 0, 1))
+    local darkColor = Color3.fromHSV(h, math.clamp(s * 1.2, 0, 1), math.clamp(v * 0.35, 0, 1))
+    return mainColor, brightColor, darkColor
+end
+
+local function buildAttachment(name: string, parent: Instance, offset: Vector3?, instancesList: {Instance}): Attachment
     local att = Instance.new("Attachment")
     att.Name = name
     if offset then att.Position = offset end
-    tagInstance(att)
+    att:SetAttribute(Config.Tag, true)
     att.Parent = parent
+    table.insert(instancesList, att)
     return att
 end
 
-local function buildEmitter(props: {[string]: any}, parent: Instance): ParticleEmitter
+local function buildEmitter(props: {[string]: any}, parent: Instance, instancesList: {Instance}): ParticleEmitter
     local emitter = Instance.new("ParticleEmitter")
     emitter.LockedToPart = true
     emitter.VelocityInheritance = 0
@@ -110,12 +113,13 @@ local function buildEmitter(props: {[string]: any}, parent: Instance): ParticleE
     for key, val in pairs(props) do
         emitter[key] = val
     end
-    tagInstance(emitter)
+    emitter:SetAttribute(Config.Tag, true)
     emitter.Parent = parent
+    table.insert(instancesList, emitter)
     return emitter
 end
 
-local function buildCosmeticPart(name: string, size: Vector3, color: Color3, transparency: number, parent: Instance): Part
+local function buildCosmeticPart(name: string, size: Vector3, color: Color3, transparency: number, parent: Instance, instancesList: {Instance}): Part
     local p = Instance.new("Part")
     p.Name = name
     p.Size = size
@@ -128,24 +132,26 @@ local function buildCosmeticPart(name: string, size: Vector3, color: Color3, tra
     p.Massless = true
     p.CastShadow = false
     p.Anchored = false
-    tagInstance(p)
+    p:SetAttribute(Config.Tag, true)
     p.Parent = parent
+    table.insert(instancesList, p)
     return p
 end
 
-local function weldTo(part0: BasePart, part1: Part, c0: CFrame): Weld
+local function weldTo(part0: BasePart, part1: Part, c0: CFrame, instancesList: {Instance}): Weld
     local w = Instance.new("Weld")
     w.Part0 = part0
     w.Part1 = part1
     w.C0 = c0
-    tagInstance(w)
+    w:SetAttribute(Config.Tag, true)
     w.Parent = part1
+    table.insert(instancesList, w)
     return w
 end
 
-local function buildWing(character: Model, anchor: BasePart, side: number): Weld
-    local wingRoot = buildCosmeticPart("RH_WingRoot", Vector3.new(0.2, 0.2, 0.2), Color3.new(1, 1, 1), 1, character)
-    local rootWeld = weldTo(anchor, wingRoot, CFrame.new(0.35 * side, 0.55, 0.62))
+local function buildWing(character: Model, anchor: BasePart, side: number, instancesList: {Instance}): Weld
+    local wingRoot = buildCosmeticPart("RH_WingRoot", Vector3.new(0.2, 0.2, 0.2), Color3.new(1, 1, 1), 1, character, instancesList)
+    local rootWeld = weldTo(anchor, wingRoot, CFrame.new(0.35 * side, 0.55, 0.62), instancesList)
 
     local feathers = {
         { 14, 2.0, 0.42 },
@@ -157,32 +163,62 @@ local function buildWing(character: Model, anchor: BasePart, side: number): Weld
 
     for i, f in ipairs(feathers) do
         local ang, len, width = f[1], f[2], f[3]
-        local feather = buildCosmeticPart("RH_Feather", Vector3.new(0.14, len, width), Color3.new(1, 1, 1), 0.05, character)
+        local feather = buildCosmeticPart("RH_Feather", Vector3.new(0.14, len, width), Color3.new(1, 1, 1), 0.05, character, instancesList)
         local fw = Instance.new("Weld")
         fw.Part0 = wingRoot
         fw.Part1 = feather
         fw.C0 = CFrame.new(0, 0, 0.035 * i)
             * CFrame.Angles(0, 0, math.rad(ang) * -side)
             * CFrame.new(0, len / 2, 0)
-        tagInstance(fw)
+        fw:SetAttribute(Config.Tag, true)
         fw.Parent = feather
+        table.insert(instancesList, fw)
     end
 
     return rootWeld
 end
 
 -------------------------------------------------------------------
--- Aura System
+-- Aura Engine (Non-Destructive & Zero-Allocation Updates)
 -------------------------------------------------------------------
 local Aura = {}
-Aura.Tracked = {}
+Aura.Tracked = setmetatable({}, { __mode = "k" })
 
 function Aura.Remove(character: Model?)
     if not character then return end
+    local data = Aura.Tracked[character]
+    if data and data.instances then
+        for _, inst in ipairs(data.instances) do
+            if inst and inst.Parent then
+                inst:Destroy()
+            end
+        end
+    end
     Aura.Tracked[character] = nil
-    for _, item in ipairs(character:GetDescendants()) do
-        if item:GetAttribute(Config.Tag) == true then
-            item:Destroy()
+end
+
+function Aura.SetVisible(visible: boolean)
+    for _, data in pairs(Aura.Tracked) do
+        if data.highlight and data.highlight.Parent then
+            data.highlight.Enabled = visible
+        end
+        if data.light and data.light.Parent then
+            data.light.Enabled = visible
+        end
+        for _, em in ipairs(data.emitters) do
+            if em.Parent then
+                em.Enabled = visible
+            end
+        end
+        for _, orb in ipairs(data.orbs) do
+            if orb.Parent then
+                orb.Transparency = visible and 0 or 1
+            end
+        end
+        for _, tr in ipairs(data.orbTrails) do
+            if tr.Parent then
+                tr.Enabled = visible
+            end
         end
     end
 end
@@ -196,13 +232,65 @@ function Aura.UpdateThroughWalls(throughWalls: boolean)
     end
 end
 
+function Aura.UpdateColors()
+    local espCfg = Config.Visuals.ESP
+    for _, data in pairs(Aura.Tracked) do
+        local mainColor
+        if data.isLocal then
+            mainColor = espCfg.Colors.Local
+        elseif data.isAlly then
+            mainColor = espCfg.Colors.Ally
+        else
+            mainColor = espCfg.Colors.Enemy
+        end
+
+        local main, bright = computeColorPalette(mainColor)
+
+        if data.highlight and data.highlight.Parent then
+            data.highlight.FillColor = main
+            data.highlight.OutlineColor = bright
+        end
+
+        if data.light and data.light.Parent then
+            data.light.Color = main
+        end
+
+        for _, orb in ipairs(data.orbs) do
+            if orb.Parent then
+                orb.Color = bright
+            end
+        end
+
+        for _, trail in ipairs(data.orbTrails) do
+            if trail.Parent then
+                trail.Color = ColorSequence.new(bright, main)
+            end
+        end
+
+        for _, em in ipairs(data.emitters) do
+            if em.Parent then
+                em.Color = ColorSequence.new(bright, main)
+            end
+        end
+    end
+end
+
 function Aura.Apply(character: Model, isAllyTeam: boolean)
     local espCfg = Config.Visuals.ESP
-    if not espCfg.Aura or not character or not character.Parent then return end
+    if not character or not character.Parent then return end
 
     local isLocalChar = (character == LocalPlayer.Character)
     if isLocalChar and not espCfg.IncludeLocal then
         Aura.Remove(character)
+        return
+    end
+
+    if Aura.Tracked[character] then
+        local data = Aura.Tracked[character]
+        data.isAlly = isAllyTeam
+        data.isLocal = isLocalChar
+        Aura.UpdateColors()
+        Aura.UpdateThroughWalls(espCfg.ThroughWalls)
         return
     end
 
@@ -217,9 +305,7 @@ function Aura.Apply(character: Model, isAllyTeam: boolean)
         mainColor = espCfg.Colors.Enemy
     end
 
-    local h, s, v = mainColor:ToHSV()
-    local brightColor = Color3.fromHSV(h, math.clamp(s * 0.5, 0, 1), math.clamp(v * 1.2, 0, 1))
-
+    local main, bright = computeColorPalette(mainColor)
     local mul = espCfg.Intensity or 1
     local zOff = isLocalChar and -1 or 0
     local fireTex = "rbxasset://textures/particles/fire_main.dds"
@@ -229,6 +315,8 @@ function Aura.Apply(character: Model, isAllyTeam: boolean)
     local anchor = torso or root
     if not anchor or not root then return end
 
+    local instancesList: {Instance} = {}
+
     local data = {
         isAlly = isAllyTeam,
         isLocal = isLocalChar,
@@ -236,33 +324,38 @@ function Aura.Apply(character: Model, isAllyTeam: boolean)
         root = root,
         orbs = {},
         orbTrails = {},
-        smoothPos = nil,
+        emitters = {},
         wingWelds = nil,
+        instances = instancesList,
+        smoothPos = nil,
     }
 
     local hl = Instance.new("Highlight")
     hl.Name = "RH_Highlight"
     hl.Adornee = character
     hl.DepthMode = espCfg.ThroughWalls and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
-    hl.FillColor = mainColor
+    hl.FillColor = main
     hl.FillTransparency = 0.75
-    hl.OutlineColor = brightColor
+    hl.OutlineColor = bright
     hl.OutlineTransparency = 0.1
-    tagInstance(hl)
+    hl.Enabled = espCfg.Aura
+    hl:SetAttribute(Config.Tag, true)
     hl.Parent = character
+    table.insert(instancesList, hl)
     data.highlight = hl
 
     if espCfg.UseOrbs then
         for i = 1, espCfg.OrbCount do
-            local orb = buildCosmeticPart("RH_Orb" .. i, Vector3.new(0.65, 0.65, 0.65), brightColor, 0, character)
+            local orb = buildCosmeticPart("RH_Orb" .. i, Vector3.new(0.65, 0.65, 0.65), bright, espCfg.Aura and 0 or 1, character, instancesList)
             orb.Anchored = true
             local orbMesh = Instance.new("SpecialMesh")
             orbMesh.MeshType = Enum.MeshType.Sphere
-            tagInstance(orbMesh)
+            orbMesh:SetAttribute(Config.Tag, true)
             orbMesh.Parent = orb
+            table.insert(instancesList, orbMesh)
 
-            local orbAtt = buildAttachment("RH_OrbGlow", orb)
-            buildEmitter({
+            local orbAtt = buildAttachment("RH_OrbGlow", orb, nil, instancesList)
+            local orbFire = buildEmitter({
                 Name = "RH_OrbFire",
                 Texture = fireTex,
                 Rate = 4 * mul,
@@ -270,30 +363,34 @@ function Aura.Apply(character: Model, isAllyTeam: boolean)
                 Speed = NumberRange.new(0, 0),
                 LightEmission = 1,
                 Brightness = 1.6,
+                Enabled = espCfg.Aura,
                 Orientation = Enum.ParticleOrientation.FacingCamera,
                 Size = NumberSequence.new({ kp(0, 1.2), kp(1, 0.4) }),
                 Transparency = NumberSequence.new({ kp(0, 0.5), kp(1, 1) }),
-                Color = ColorSequence.new(brightColor, mainColor),
-            }, orbAtt)
+                Color = ColorSequence.new(bright, main),
+            }, orbAtt, instancesList)
+            table.insert(data.emitters, orbFire)
 
-            local ta0 = buildAttachment("RH_OrbT0", orb, Vector3.new(0, 0.3, 0))
-            local ta1 = buildAttachment("RH_OrbT1", orb, Vector3.new(0, -0.3, 0))
+            local ta0 = buildAttachment("RH_OrbT0", orb, Vector3.new(0, 0.3, 0), instancesList)
+            local ta1 = buildAttachment("RH_OrbT1", orb, Vector3.new(0, -0.3, 0), instancesList)
             local orbTrail = Instance.new("Trail")
             orbTrail.Name = "RH_OrbTrail"
             orbTrail.Attachment0 = ta0
             orbTrail.Attachment1 = ta1
-            orbTrail.Lifetime = 0.5
-            orbTrail.MaxLength = 14
+            orbTrail.Lifetime = 0.4
+            orbTrail.MaxLength = 12
             orbTrail.MinLength = 0.02
             orbTrail.FaceCamera = true
             orbTrail.LightEmission = 1
             orbTrail.LightInfluence = 0
             orbTrail.Brightness = 2
+            orbTrail.Enabled = espCfg.Aura
             orbTrail.WidthScale = NumberSequence.new({ kp(0, 1.1), kp(0.5, 0.6), kp(1, 0.1) })
-            orbTrail.Color = ColorSequence.new(brightColor, mainColor)
+            orbTrail.Color = ColorSequence.new(bright, main)
             orbTrail.Transparency = NumberSequence.new({ kp(0, 0.12), kp(0.6, 0.55), kp(1, 1) })
-            tagInstance(orbTrail)
+            orbTrail:SetAttribute(Config.Tag, true)
             orbTrail.Parent = orb
+            table.insert(instancesList, orbTrail)
 
             table.insert(data.orbTrails, orbTrail)
             table.insert(data.orbs, orb)
@@ -302,24 +399,25 @@ function Aura.Apply(character: Model, isAllyTeam: boolean)
 
     if isLocalChar and espCfg.UseWings then
         data.wingWelds = {
-            buildWing(character, anchor, -1),
-            buildWing(character, anchor, 1),
+            buildWing(character, anchor, -1, instancesList),
+            buildWing(character, anchor, 1, instancesList),
         }
     end
 
     if espCfg.UseFlames then
-        local coreAtt = buildAttachment("RH_Core", anchor)
+        local coreAtt = buildAttachment("RH_Core", anchor, nil, instancesList)
 
-        buildEmitter({
+        local coreFire = buildEmitter({
             Name = "RH_CoreFire",
             Texture = fireTex,
-            Rate = 26 * mul,
+            Rate = 24 * mul,
             Lifetime = NumberRange.new(0.5, 0.65),
             Speed = NumberRange.new(2.5, 3.5),
             SpreadAngle = Vector2.new(9, 9),
             Acceleration = Vector3.new(0, 6, 0),
             LightEmission = 1,
             Brightness = 2,
+            Enabled = espCfg.Aura,
             ZOffset = zOff,
             EmissionDirection = Enum.NormalId.Top,
             Orientation = Enum.ParticleOrientation.FacingCamera,
@@ -328,22 +426,24 @@ function Aura.Apply(character: Model, isAllyTeam: boolean)
             Size = NumberSequence.new({ kp(0, 2.6), kp(0.5, 2.0), kp(1, 0.6) }),
             Transparency = NumberSequence.new({ kp(0, 0.45), kp(0.35, 0.1), kp(0.75, 0.5), kp(1, 1) }),
             Color = ColorSequence.new({
-                ColorSequenceKeypoint.new(0, brightColor),
-                ColorSequenceKeypoint.new(0.45, mainColor),
-                ColorSequenceKeypoint.new(1, mainColor),
+                ColorSequenceKeypoint.new(0, bright),
+                ColorSequenceKeypoint.new(0.45, main),
+                ColorSequenceKeypoint.new(1, main),
             }),
-        }, coreAtt)
+        }, coreAtt, instancesList)
+        table.insert(data.emitters, coreFire)
 
-        buildEmitter({
+        local innerFire = buildEmitter({
             Name = "RH_CoreFireInner",
             Texture = fireTex,
-            Rate = 12 * mul,
+            Rate = 10 * mul,
             Lifetime = NumberRange.new(0.3, 0.4),
             Speed = NumberRange.new(4, 5),
             SpreadAngle = Vector2.new(4, 4),
             Acceleration = Vector3.new(0, 8, 0),
             LightEmission = 1,
             Brightness = 2.4,
+            Enabled = espCfg.Aura,
             ZOffset = zOff + 0.1,
             EmissionDirection = Enum.NormalId.Top,
             Orientation = Enum.ParticleOrientation.FacingCamera,
@@ -351,44 +451,49 @@ function Aura.Apply(character: Model, isAllyTeam: boolean)
             RotSpeed = NumberRange.new(-20, 20),
             Size = NumberSequence.new({ kp(0, 1.2), kp(0.6, 0.8), kp(1, 0.2) }),
             Transparency = NumberSequence.new({ kp(0, 0.3), kp(0.5, 0.15), kp(1, 1) }),
-            Color = ColorSequence.new(brightColor, mainColor),
-        }, coreAtt)
+            Color = ColorSequence.new(bright, main),
+        }, coreAtt, instancesList)
+        table.insert(data.emitters, innerFire)
 
         for _, armName in ipairs({ "Left Arm", "Right Arm" }) do
             local arm = getLimb(character, armName)
             if arm then
-                local fistAtt = buildAttachment("RH_Fist", arm, Vector3.new(0, -arm.Size.Y * 0.4, 0))
-                buildEmitter({
+                local fistAtt = buildAttachment("RH_Fist", arm, Vector3.new(0, -arm.Size.Y * 0.4, 0), instancesList)
+                local fistFire = buildEmitter({
                     Name = "RH_FistFire",
                     Texture = fireTex,
-                    Rate = 11 * mul,
+                    Rate = 10 * mul,
                     Lifetime = NumberRange.new(0.3, 0.4),
                     Speed = NumberRange.new(1, 1.5),
                     SpreadAngle = Vector2.new(8, 8),
                     Acceleration = Vector3.new(0, 4, 0),
                     LightEmission = 1,
                     Brightness = 2,
+                    Enabled = espCfg.Aura,
                     ZOffset = zOff,
                     EmissionDirection = Enum.NormalId.Top,
                     Orientation = Enum.ParticleOrientation.FacingCamera,
                     Size = NumberSequence.new({ kp(0, 1.05), kp(1, 0.3) }),
                     Transparency = NumberSequence.new({ kp(0, 0.4), kp(0.4, 0.2), kp(1, 1) }),
-                    Color = ColorSequence.new(brightColor, mainColor),
-                }, fistAtt)
+                    Color = ColorSequence.new(bright, main),
+                }, fistAtt, instancesList)
+                table.insert(data.emitters, fistFire)
             end
         end
     end
 
     if espCfg.UseLight then
-        local lightAtt = buildAttachment("RH_LightAtt", anchor)
+        local lightAtt = buildAttachment("RH_LightAtt", anchor, nil, instancesList)
         local light = Instance.new("PointLight")
         light.Name = "RH_Light"
-        light.Color = mainColor
+        light.Color = main
         light.Brightness = 1.5
         light.Range = 12
         light.Shadows = false
-        tagInstance(light)
+        light.Enabled = espCfg.Aura
+        light:SetAttribute(Config.Tag, true)
         light.Parent = lightAtt
+        table.insert(instancesList, light)
         data.light = light
     end
 
@@ -397,9 +502,13 @@ end
 
 function Aura.Step(t: number, dt: number)
     local espCfg = Config.Visuals.ESP
+    if not espCfg.Aura then return end
+
+    local deadModels: {Model} = {}
+
     for model, data in pairs(Aura.Tracked) do
-        if not model.Parent then
-            Aura.Tracked[model] = nil
+        if not model.Parent or not data.root or not data.root.Parent then
+            table.insert(deadModels, model)
         else
             local phase = data.phase
             local pulse = 0.5 + 0.5 * math.sin(t * 2.2 + phase)
@@ -409,11 +518,11 @@ function Aura.Step(t: number, dt: number)
                 data.highlight.OutlineTransparency = 0.12 + 0.2 * pulse
             end
             if data.light and data.light.Parent then
-                data.light.Brightness = 1 + 0.9 * pulse
+                data.light.Brightness = 1 + 0.8 * pulse
             end
 
             local rootPart = data.root
-            if rootPart and rootPart.Parent and #data.orbs > 0 then
+            if #data.orbs > 0 then
                 local rootPos = rootPart.Position
                 local k = 14
                 local alpha = 1 - math.exp(-dt * k)
@@ -426,21 +535,13 @@ function Aura.Step(t: number, dt: number)
                 end
                 local basePos = data.smoothPos
 
-                local vel = velVec.Magnitude
-                local targetLife = math.clamp(0.5 * 18 / (18 + vel), 0.15, 0.5)
-                for _, tr in ipairs(data.orbTrails) do
-                    if tr.Parent then
-                        tr.Lifetime = tr.Lifetime + (targetLife - tr.Lifetime) * alpha
-                    end
-                end
-
                 local n = #data.orbs
                 for i, orb in ipairs(data.orbs) do
                     if orb.Parent then
                         local ang = t * espCfg.OrbSpeed + phase + (i - 1) * (TAU / n)
                         orb.CFrame = CFrame.new(basePos)
                             * CFrame.Angles(0, ang, 0)
-                            * CFrame.new(espCfg.OrbRadius, math.sin(t * 1.8 + i * 2.1) * 0.6, 0)
+                            * CFrame.new(espCfg.OrbRadius, math.sin(t * 1.8 + i * 2.1) * 0.5, 0)
                     end
                 end
             end
@@ -461,14 +562,19 @@ function Aura.Step(t: number, dt: number)
             end
         end
     end
+
+    for _, m in ipairs(deadModels) do
+        Aura.Remove(m)
+    end
 end
 
 -------------------------------------------------------------------
--- Bullet Tracers System
+-- Bullet Tracers System (Capped & Fast Cleanup)
 -------------------------------------------------------------------
 local Tracers = {}
 Tracers.ActiveTracers = {}
 Tracers.Folder = nil
+Tracers.MAX_ACTIVE = 24
 
 local function getTracerFolder(): Folder
     if Tracers.Folder and Tracers.Folder.Parent then
@@ -476,7 +582,7 @@ local function getTracerFolder(): Folder
     end
     local f = Instance.new("Folder")
     f.Name = "RH_Tracers"
-    tagInstance(f)
+    f:SetAttribute(Config.Tag, true)
     f.Parent = Workspace
     Tracers.Folder = f
     return f
@@ -489,6 +595,14 @@ function Tracers.FireTracer(origin: Vector3, hitPos: Vector3, isEnemy: boolean?)
     local dirVec = hitPos - origin
     local length = dirVec.Magnitude
     if length < 2 then return end
+
+    if #Tracers.ActiveTracers >= Tracers.MAX_ACTIVE then
+        local oldest = table.remove(Tracers.ActiveTracers, 1)
+        if oldest then
+            if oldest.rail and oldest.rail.Parent then oldest.rail:Destroy() end
+            if oldest.orb and oldest.orb.Parent then oldest.orb:Destroy() end
+        end
+    end
 
     local folder = getTracerFolder()
     local railCF = CFrame.lookAt(origin, hitPos)
@@ -507,11 +621,11 @@ function Tracers.FireTracer(origin: Vector3, hitPos: Vector3, isEnemy: boolean?)
     rail.CanTouch = false
     rail.CastShadow = false
     rail.CFrame = railCF * CFrame.new(0, 0, -length / 2)
-    tagInstance(rail)
+    rail:SetAttribute(Config.Tag, true)
     rail.Parent = folder
 
-    local a0 = buildAttachment("RH_Tr0", rail, Vector3.new(0, 0, length / 2))
-    local a1 = buildAttachment("RH_Tr1", rail, Vector3.new(0, 0, -length / 2))
+    local a0 = buildAttachment("RH_Tr0", rail, Vector3.new(0, 0, length / 2), {})
+    local a1 = buildAttachment("RH_Tr1", rail, Vector3.new(0, 0, -length / 2), {})
 
     local beam = Instance.new("Beam")
     beam.Name = "RH_TracerBeam"
@@ -521,16 +635,16 @@ function Tracers.FireTracer(origin: Vector3, hitPos: Vector3, isEnemy: boolean?)
     beam.LightEmission = 1
     beam.LightInfluence = 0
     beam.Brightness = 3
-    beam.Width0 = 0.16
-    beam.Width1 = 0.09
+    beam.Width0 = 0.15
+    beam.Width1 = 0.08
     beam.Color = ColorSequence.new(coreColor)
     beam.Transparency = NumberSequence.new(0.1)
-    tagInstance(beam)
+    beam:SetAttribute(Config.Tag, true)
     beam.Parent = rail
 
     local orb = Instance.new("Part")
     orb.Name = "RH_TracerOrb"
-    orb.Size = Vector3.new(0.22, 0.22, 0.22)
+    orb.Size = Vector3.new(0.2, 0.2, 0.2)
     orb.Material = Enum.Material.Neon
     orb.Color = spiralColor
     orb.Anchored = true
@@ -539,22 +653,22 @@ function Tracers.FireTracer(origin: Vector3, hitPos: Vector3, isEnemy: boolean?)
     orb.CanTouch = false
     orb.CastShadow = false
     orb.CFrame = railCF * CFrame.new(tCfg.SpiralRadius, 0, 0)
-    tagInstance(orb)
+    orb:SetAttribute(Config.Tag, true)
 
     local orbMesh = Instance.new("SpecialMesh")
     orbMesh.MeshType = Enum.MeshType.Sphere
-    tagInstance(orbMesh)
+    orbMesh:SetAttribute(Config.Tag, true)
     orbMesh.Parent = orb
     orb.Parent = folder
 
-    local ta0 = buildAttachment("RH_TrS0", orb, Vector3.new(0, 0.11, 0))
-    local ta1 = buildAttachment("RH_TrS1", orb, Vector3.new(0, -0.11, 0))
+    local ta0 = buildAttachment("RH_TrS0", orb, Vector3.new(0, 0.1, 0), {})
+    local ta1 = buildAttachment("RH_TrS1", orb, Vector3.new(0, -0.1, 0), {})
 
     local spiralTrail = Instance.new("Trail")
     spiralTrail.Name = "RH_SpiralTrail"
     spiralTrail.Attachment0 = ta0
     spiralTrail.Attachment1 = ta1
-    spiralTrail.Lifetime = 0.22
+    spiralTrail.Lifetime = 0.2
     spiralTrail.MinLength = 0.02
     spiralTrail.FaceCamera = true
     spiralTrail.LightEmission = 1
@@ -563,7 +677,7 @@ function Tracers.FireTracer(origin: Vector3, hitPos: Vector3, isEnemy: boolean?)
     spiralTrail.WidthScale = NumberSequence.new({ kp(0, 1), kp(1, 0.2) })
     spiralTrail.Color = ColorSequence.new(spiralColor, coreColor)
     spiralTrail.Transparency = NumberSequence.new({ kp(0, 0.1), kp(1, 1) })
-    tagInstance(spiralTrail)
+    spiralTrail:SetAttribute(Config.Tag, true)
     spiralTrail.Parent = orb
 
     local duration = math.max(tCfg.Duration or 0.4, length / tCfg.SpiralSpeed + 0.15)
@@ -616,8 +730,8 @@ function Tracers.Step(dt: number)
         tr.age += dt
 
         if tr.age >= tr.duration or not tr.rail.Parent then
-            tr.rail:Destroy()
-            tr.orb:Destroy()
+            if tr.rail and tr.rail.Parent then tr.rail:Destroy() end
+            if tr.orb and tr.orb.Parent then tr.orb:Destroy() end
             table.remove(Tracers.ActiveTracers, i)
         else
             local fade = math.clamp(tr.age / tr.duration, 0, 1)
@@ -639,20 +753,19 @@ function Tracers.Step(dt: number)
 end
 
 function Tracers.Cleanup()
-    table.clear(Tracers.ActiveTracers)
-    if Tracers.Folder then
-        Tracers.Folder:Destroy()
-        Tracers.Folder = nil
+    for _, tr in ipairs(Tracers.ActiveTracers) do
+        if tr.rail and tr.rail.Parent then tr.rail:Destroy() end
+        if tr.orb and tr.orb.Parent then tr.orb:Destroy() end
     end
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        if obj:GetAttribute(Config.Tag) == true then
-            obj:Destroy()
-        end
+    table.clear(Tracers.ActiveTracers)
+
+    if Tracers.Folder and Tracers.Folder.Parent then
+        Tracers.Folder:ClearAllChildren()
     end
 end
 
 -------------------------------------------------------------------
--- Game Hook System (FighterController + TracerEffect Hook)
+-- Game Hook System (Deduplicated Characters & Single Flow)
 -------------------------------------------------------------------
 local GameHook = {}
 GameHook.Connections = {}
@@ -690,12 +803,77 @@ function GameHook.GetModelForPlayer(player: Player): Model?
     return nil
 end
 
+function GameHook.GetUniqueCharacters(): {[Model]: {player: Player?, isAlly: boolean, isLocal: boolean}}
+    local results: {[Model]: {player: Player?, isAlly: boolean, isLocal: boolean}} = {}
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        local m = GameHook.GetModelForPlayer(player)
+        if m and m.Parent and not results[m] then
+            results[m] = {
+                player = player,
+                isAlly = GameHook.IsAlly(player),
+                isLocal = (player == LocalPlayer)
+            }
+        end
+    end
+
+    local fc = GameHook.FighterController
+    if fc and fc.Objects then
+        for _, fighter in pairs(fc.Objects) do
+            if fighter.Entity and fighter.Entity.Model and fighter.Entity.Model.Parent then
+                local m = fighter.Entity.Model
+                if not results[m] then
+                    local p = fighter.Player
+                    results[m] = {
+                        player = p,
+                        isAlly = p and GameHook.IsAlly(p) or false,
+                        isLocal = (p == LocalPlayer)
+                    }
+                end
+            end
+        end
+    end
+
+    return results
+end
+
+function GameHook.RefreshAuras()
+    if not Config.Visuals.ESP.Aura then
+        Aura.SetVisible(false)
+        return
+    end
+
+    Aura.SetVisible(true)
+    local chars = GameHook.GetUniqueCharacters()
+
+    for m, info in pairs(chars) do
+        if info.isLocal and not Config.Visuals.ESP.IncludeLocal then
+            Aura.Remove(m)
+        else
+            if not Aura.Tracked[m] then
+                Aura.Apply(m, info.isAlly)
+            end
+        end
+    end
+
+    for m in pairs(Aura.Tracked) do
+        if not chars[m] then
+            Aura.Remove(m)
+        end
+    end
+
+    Aura.UpdateColors()
+    Aura.UpdateThroughWalls(Config.Visuals.ESP.ThroughWalls)
+end
+
 function GameHook.HookTracers()
     if GameHook.TracerHooked then return end
 
     task.spawn(function()
         local tracerModule
-        while not tracerModule do
+        local attempts = 0
+        while not tracerModule and attempts < 20 do
+            attempts += 1
             local playerScripts = LocalPlayer:FindFirstChild("PlayerScripts")
             local modules = playerScripts and playerScripts:FindFirstChild("Modules")
             local tm = modules and modules:FindFirstChild("TracerEffect")
@@ -714,17 +892,19 @@ function GameHook.HookTracers()
             tracerModule.Play = function(self, p9, p10, p11)
                 if Config.Visuals.Tracers.Enabled then
                     task.spawn(function()
-                        local u12, _, u14 = self:VerifyTracerData(p9, p10, p11)
-                        if u14 and u14.MuzzlePosition and u12 and u12.RaycastResults then
-                            local isEnemy = u12.IsEnemy or false
-                            for _, res in pairs(u12.RaycastResults) do
-                                local startPos = res.StartPosition or u14.MuzzlePosition
-                                local hitPos = res.Position
-                                if startPos and hitPos then
-                                    Tracers.FireTracer(startPos, hitPos, isEnemy)
+                        pcall(function()
+                            local u12, _, u14 = self:VerifyTracerData(p9, p10, p11)
+                            if u14 and u14.MuzzlePosition and u12 and u12.RaycastResults then
+                                local isEnemy = u12.IsEnemy or false
+                                for _, res in pairs(u12.RaycastResults) do
+                                    local startPos = res.StartPosition or u14.MuzzlePosition
+                                    local hitPos = res.Position
+                                    if startPos and hitPos then
+                                        Tracers.FireTracer(startPos, hitPos, isEnemy)
+                                    end
                                 end
                             end
-                        end
+                        end)
                     end)
                 end
                 return originalPlay(self, p9, p10, p11)
@@ -732,33 +912,6 @@ function GameHook.HookTracers()
             GameHook.TracerHooked = true
         end
     end)
-end
-
-function GameHook.RefreshAuras()
-    if not Config.Visuals.ESP.Aura then return end
-    for _, p in ipairs(Players:GetPlayers()) do
-        local isLocal = (p == LocalPlayer)
-        if isLocal and not Config.Visuals.ESP.IncludeLocal then
-            local oldModel = GameHook.GetModelForPlayer(p)
-            if oldModel then
-                Aura.Remove(oldModel)
-            end
-        else
-            local m = GameHook.GetModelForPlayer(p)
-            if m then
-                Aura.Apply(m, GameHook.IsAlly(p))
-            end
-        end
-    end
-    local fc = GameHook.FighterController
-    if fc and fc.Objects then
-        for _, f in pairs(fc.Objects) do
-            if f.Entity and f.Entity.Model and f.Entity.Model.Parent then
-                local p = f.Player
-                Aura.Apply(f.Entity.Model, p and GameHook.IsAlly(p) or false)
-            end
-        end
-    end
 end
 
 function GameHook.Init()
@@ -769,56 +922,15 @@ function GameHook.Init()
 
     GameHook.HookTracers()
 
-    local function updatePlayer(player: Player)
-        if not player or not Config.Visuals.ESP.Aura then return end
-        local isLocal = (player == LocalPlayer)
-        if isLocal and not Config.Visuals.ESP.IncludeLocal then
-            local oldModel = GameHook.GetModelForPlayer(player)
-            if oldModel then
-                Aura.Remove(oldModel)
-            end
-            return
-        end
-        local m = GameHook.GetModelForPlayer(player)
-        if m then
-            Aura.Apply(m, GameHook.IsAlly(player))
-        end
-    end
-
-    local function watchFighter(fighter: any)
-        if not fighter then return end
-        local conns = {}
-
-        local function onEntity(entity: any)
-            if not entity or not entity.Model then return end
-            local m = entity.Model
-            local hum = m:WaitForChild("Humanoid", 4)
-            local root = m:WaitForChild("HumanoidRootPart", 4)
-            if not hum or not root then return end
-            task.wait(0.05)
-            if not m.Parent then return end
-            local p = fighter.Player
-            if p == LocalPlayer and not Config.Visuals.ESP.IncludeLocal then
-                return
-            end
-            Aura.Apply(m, p and GameHook.IsAlly(p) or false)
-        end
-
-        if fighter.EntityAdded then
-            table.insert(conns, fighter.EntityAdded:Connect(onEntity))
-        end
-        if fighter.EntityRemoved then
-            table.insert(conns, fighter.EntityRemoved:Connect(function(entity)
-                if entity and entity.Model then
-                    Aura.Remove(entity.Model)
-                end
-            end))
-        end
-        if fighter.Entity and fighter.Entity.Model then
-            task.spawn(onEntity, fighter.Entity)
-        end
-
-        return conns
+    local function onCharacterModel(m: Model?, isAlly: boolean, isLocal: boolean)
+        if not m or not m.Parent or not Config.Visuals.ESP.Aura then return end
+        if isLocal and not Config.Visuals.ESP.IncludeLocal then return end
+        local hum = m:WaitForChild("Humanoid", 3)
+        local root = m:WaitForChild("HumanoidRootPart", 3)
+        if not hum or not root then return end
+        task.wait(0.04)
+        if not m.Parent then return end
+        Aura.Apply(m, isAlly)
     end
 
     local function watchPlayer(player: Player)
@@ -830,40 +942,19 @@ function GameHook.Init()
 
         local pConns = {}
         GameHook.PlayerConnections[player] = pConns
+        local isLocal = (player == LocalPlayer)
 
-        local function handleChar(char: Model?)
-            if not char then return end
-            local hum = char:WaitForChild("Humanoid", 5)
-            local root = char:WaitForChild("HumanoidRootPart", 5)
-            if not hum or not root then return end
-            task.wait(0.05)
-            if not char.Parent then return end
-            if player == LocalPlayer and not Config.Visuals.ESP.IncludeLocal then
-                return
-            end
-            Aura.Apply(char, GameHook.IsAlly(player))
-
-            local diedConn
-            diedConn = hum.Died:Connect(function()
-                if diedConn then diedConn:Disconnect() end
-                Aura.Remove(char)
-            end)
-            table.insert(pConns, diedConn)
-        end
-
-        table.insert(pConns, player.CharacterAdded:Connect(handleChar))
+        table.insert(pConns, player.CharacterAdded:Connect(function(char)
+            onCharacterModel(char, GameHook.IsAlly(player), isLocal)
+        end))
         table.insert(pConns, player.CharacterRemoving:Connect(function(char)
             Aura.Remove(char)
         end))
-        table.insert(pConns, player:GetAttributeChangedSignal("TeamID"):Connect(function()
-            updatePlayer(player)
-        end))
-        table.insert(pConns, player:GetPropertyChangedSignal("Team"):Connect(function()
-            updatePlayer(player)
-        end))
+        table.insert(pConns, player:GetAttributeChangedSignal("TeamID"):Connect(GameHook.RefreshAuras))
+        table.insert(pConns, player:GetPropertyChangedSignal("Team"):Connect(GameHook.RefreshAuras))
 
         if player.Character and player.Character.Parent then
-            task.spawn(handleChar, player.Character)
+            task.spawn(onCharacterModel, player.Character, GameHook.IsAlly(player), isLocal)
         end
     end
 
@@ -891,21 +982,34 @@ function GameHook.Init()
 
     local fc = GameHook.FighterController
     if fc then
-        if fc.Objects then
-            for _, fighter in pairs(fc.Objects) do
-                local conns = watchFighter(fighter)
-                if conns then
-                    for _, c in ipairs(conns) do table.insert(GameHook.Connections, c) end
-                end
+        local function watchFighter(fighter: any)
+            if not fighter then return end
+            if fighter.EntityAdded then
+                table.insert(GameHook.Connections, fighter.EntityAdded:Connect(function(entity)
+                    if entity and entity.Model then
+                        local p = fighter.Player
+                        onCharacterModel(entity.Model, p and GameHook.IsAlly(p) or false, p == LocalPlayer)
+                    end
+                end))
+            end
+            if fighter.EntityRemoved then
+                table.insert(GameHook.Connections, fighter.EntityRemoved:Connect(function(entity)
+                    if entity and entity.Model then
+                        Aura.Remove(entity.Model)
+                    end
+                end))
+            end
+            if fighter.Entity and fighter.Entity.Model then
+                local p = fighter.Player
+                task.spawn(onCharacterModel, fighter.Entity.Model, p and GameHook.IsAlly(p) or false, p == LocalPlayer)
             end
         end
+
+        if fc.Objects then
+            for _, f in pairs(fc.Objects) do watchFighter(f) end
+        end
         if fc.ObjectAdded then
-            table.insert(GameHook.Connections, fc.ObjectAdded:Connect(function(fighter)
-                local conns = watchFighter(fighter)
-                if conns then
-                    for _, c in ipairs(conns) do table.insert(GameHook.Connections, c) end
-                end
-            end))
+            table.insert(GameHook.Connections, fc.ObjectAdded:Connect(watchFighter))
         end
     end
 
@@ -944,19 +1048,21 @@ function GameHook.Init()
     local scanTimer = 0
     table.insert(GameHook.Connections, RunService.Heartbeat:Connect(function(dt)
         scanTimer += dt
-        if scanTimer < 0.8 then return end
+        if scanTimer < 1.5 then return end
         scanTimer = 0
         if not Config.Visuals.ESP.Aura then return end
 
-        for _, player in ipairs(Players:GetPlayers()) do
-            local m = GameHook.GetModelForPlayer(player)
-            if m and m.Parent and not Aura.Tracked[m] then
-                if player ~= LocalPlayer or Config.Visuals.ESP.IncludeLocal then
-                    Aura.Apply(m, GameHook.IsAlly(player))
+        local chars = GameHook.GetUniqueCharacters()
+        for m, info in pairs(chars) do
+            if not Aura.Tracked[m] then
+                if not info.isLocal or Config.Visuals.ESP.IncludeLocal then
+                    Aura.Apply(m, info.isAlly)
                 end
             end
         end
     end))
+
+    GameHook.RefreshAuras()
 end
 
 function GameHook.Destroy()
@@ -982,9 +1088,29 @@ function GameHook.Destroy()
 end
 
 -------------------------------------------------------------------
--- UI Initialization (Rayfield Framework)
+-- UI Engine (Rayfield Sidebar Tabs & Non-Blocking Callbacks)
 -------------------------------------------------------------------
-local function buildUI()
+local function createDebounced(fn, delay)
+    local last = 0
+    local pending = false
+    return function(...)
+        local args = {...}
+        local now = os.clock()
+        if now - last >= delay then
+            last = now
+            fn(table.unpack(args))
+        elseif not pending then
+            pending = true
+            task.delay(delay, function()
+                pending = false
+                last = os.clock()
+                fn(table.unpack(args))
+            end)
+        end
+    end
+end
+
+local function buildUI(onUnload: () -> ())
     local ok, Rayfield = pcall(function()
         return loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
     end)
@@ -996,83 +1122,137 @@ local function buildUI()
     local Window = Rayfield:CreateWindow({
         Name = "RIVALS HUB",
         LoadingTitle = "RIVALS HUB",
-        LoadingSubtitle = "Visuals",
+        LoadingSubtitle = "Visuals Client",
         ConfigurationSaving = {
             Enabled = false,
         },
         KeySystem = false,
     })
 
-    local VisualsTab = Window:CreateTab("Visuals", 4483362458)
-
-    VisualsTab:CreateSection("ESP")
-
     local esp = Config.Visuals.ESP
+    local tr = Config.Visuals.Tracers
 
-    VisualsTab:CreateToggle({
+    local debouncedUpdateColors = createDebounced(function()
+        Aura.UpdateColors()
+    end, 0.04)
+
+    -- TAB 1: Aura ESP (Sidebar)
+    local ESPTab = Window:CreateTab("Aura ESP", 4483362458)
+
+    ESPTab:CreateSection("ESP")
+
+    ESPTab:CreateToggle({
         Name = "Aura",
         CurrentValue = esp.Aura,
-        Flag = "Aura",
+        Flag = "AuraToggle",
         Callback = function(value)
             esp.Aura = value
+            Aura.SetVisible(value)
             if value then
                 GameHook.RefreshAuras()
-            else
-                for m in pairs(Aura.Tracked) do
-                    Aura.Remove(m)
-                end
             end
         end,
     })
 
-    VisualsTab:CreateToggle({
+    ESPTab:CreateToggle({
         Name = "Through Walls",
         CurrentValue = esp.ThroughWalls,
-        Flag = "ThroughWalls",
+        Flag = "ThroughWallsToggle",
         Callback = function(value)
             esp.ThroughWalls = value
             Aura.UpdateThroughWalls(value)
         end,
     })
 
-    VisualsTab:CreateColorPicker({
+    ESPTab:CreateToggle({
+        Name = "Include Local Player",
+        CurrentValue = esp.IncludeLocal,
+        Flag = "IncludeLocalToggle",
+        Callback = function(value)
+            esp.IncludeLocal = value
+            GameHook.RefreshAuras()
+        end,
+    })
+
+    ESPTab:CreateSection("Colors")
+
+    ESPTab:CreateColorPicker({
         Name = "Local Color",
         Color = esp.Colors.Local,
-        Flag = "LocalColor",
+        Flag = "LocalColorPicker",
         Callback = function(value)
             esp.Colors.Local = value
-            if esp.Aura then GameHook.RefreshAuras() end
+            debouncedUpdateColors()
         end,
     })
 
-    VisualsTab:CreateColorPicker({
+    ESPTab:CreateColorPicker({
         Name = "Ally Color",
         Color = esp.Colors.Ally,
-        Flag = "AllyColor",
+        Flag = "AllyColorPicker",
         Callback = function(value)
             esp.Colors.Ally = value
-            if esp.Aura then GameHook.RefreshAuras() end
+            debouncedUpdateColors()
         end,
     })
 
-    VisualsTab:CreateColorPicker({
+    ESPTab:CreateColorPicker({
         Name = "Enemy Color",
         Color = esp.Colors.Enemy,
-        Flag = "EnemyColor",
+        Flag = "EnemyColorPicker",
         Callback = function(value)
             esp.Colors.Enemy = value
-            if esp.Aura then GameHook.RefreshAuras() end
+            debouncedUpdateColors()
         end,
     })
 
-    VisualsTab:CreateSection("Bullet Tracers")
+    ESPTab:CreateSection("Modifiers")
 
-    local tr = Config.Visuals.Tracers
+    ESPTab:CreateToggle({
+        Name = "Angel Wings",
+        CurrentValue = esp.UseWings,
+        Flag = "AngelWingsToggle",
+        Callback = function(value)
+            esp.UseWings = value
+            GameHook.RefreshAuras()
+        end,
+    })
 
-    VisualsTab:CreateToggle({
+    ESPTab:CreateSlider({
+        Name = "Orb Count",
+        Range = {1, 5},
+        Increment = 1,
+        Suffix = "orbs",
+        CurrentValue = esp.OrbCount,
+        Flag = "OrbCountSlider",
+        Callback = function(value)
+            esp.OrbCount = value
+            GameHook.RefreshAuras()
+        end,
+    })
+
+    ESPTab:CreateSlider({
+        Name = "Intensity",
+        Range = {0.5, 2.5},
+        Increment = 0.1,
+        Suffix = "x",
+        CurrentValue = esp.Intensity,
+        Flag = "IntensitySlider",
+        Callback = function(value)
+            esp.Intensity = value
+            debouncedUpdateColors()
+        end,
+    })
+
+    -- TAB 2: Bullet Tracers (Sidebar)
+    local TracersTab = Window:CreateTab("Bullet Tracers", 4483362458)
+
+    TracersTab:CreateSection("Bullet Tracers")
+
+    TracersTab:CreateToggle({
         Name = "Tracers",
         CurrentValue = tr.Enabled,
-        Flag = "Tracers",
+        Flag = "TracersToggle",
         Callback = function(value)
             tr.Enabled = value
             if not value then
@@ -1081,34 +1261,101 @@ local function buildUI()
         end,
     })
 
-    VisualsTab:CreateSlider({
+    TracersTab:CreateToggle({
+        Name = "Fallback Click Raycast",
+        CurrentValue = tr.FallbackCameraRaycast,
+        Flag = "FallbackRaycastToggle",
+        Callback = function(value)
+            tr.FallbackCameraRaycast = value
+        end,
+    })
+
+    TracersTab:CreateSlider({
         Name = "Duration",
-        Range = {0.1, 2},
+        Range = {0.1, 2.0},
         Increment = 0.05,
         Suffix = "s",
         CurrentValue = tr.Duration or 0.4,
-        Flag = "Duration",
+        Flag = "DurationSlider",
         Callback = function(value)
             tr.Duration = value
         end,
     })
 
-    VisualsTab:CreateColorPicker({
+    TracersTab:CreateSection("Colors")
+
+    TracersTab:CreateColorPicker({
         Name = "Friendly Color",
         Color = tr.FriendlyColor,
-        Flag = "FriendlyColor",
+        Flag = "FriendlyColorPicker",
         Callback = function(value)
             tr.FriendlyColor = value
         end,
     })
 
-    VisualsTab:CreateColorPicker({
+    TracersTab:CreateColorPicker({
         Name = "Enemy Color",
         Color = tr.EnemyColor,
-        Flag = "EnemyColor",
+        Flag = "EnemyColorPicker",
         Callback = function(value)
             tr.EnemyColor = value
         end,
+    })
+
+    TracersTab:CreateSection("Spiral Physics")
+
+    TracersTab:CreateSlider({
+        Name = "Spiral Speed",
+        Range = {200, 800},
+        Increment = 20,
+        Suffix = "studs/s",
+        CurrentValue = tr.SpiralSpeed or 420,
+        Flag = "SpiralSpeedSlider",
+        Callback = function(value)
+            tr.SpiralSpeed = value
+        end,
+    })
+
+    TracersTab:CreateSlider({
+        Name = "Spiral Radius",
+        Range = {0.1, 0.8},
+        Increment = 0.02,
+        Suffix = "studs",
+        CurrentValue = tr.SpiralRadius or 0.32,
+        Flag = "SpiralRadiusSlider",
+        Callback = function(value)
+            tr.SpiralRadius = value
+        end,
+    })
+
+    -- TAB 3: Settings (Sidebar)
+    local SettingsTab = Window:CreateTab("Settings", 4483362458)
+
+    SettingsTab:CreateSection("Interface")
+
+    SettingsTab:CreateKeybind({
+        Name = "Toggle Menu Key",
+        CurrentKeybind = "RightShift",
+        HoldToInteract = false,
+        Flag = "MenuKeybind",
+        Callback = function()
+        end,
+    })
+
+    SettingsTab:CreateButton({
+        Name = "Unload Hub",
+        Callback = function()
+            if typeof(onUnload) == "function" then
+                onUnload()
+            end
+        end,
+    })
+
+    SettingsTab:CreateSection("Diagnostics")
+
+    SettingsTab:CreateParagraph({
+        Title = "Rivals Visuals Client",
+        Content = "Optimized zero-allocation rendering engine.\nHooks: TracerEffect (Weapons) + FighterController (Duels).",
     })
 
     return {
@@ -1141,6 +1388,8 @@ end
 env.RivalsHubInstance = App
 
 GameHook.Init()
-App.UI = buildUI()
+App.UI = buildUI(function()
+    App.Destroy()
+end)
 
 return App

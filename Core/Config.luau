@@ -31,6 +31,9 @@ local Config = {
             Interval = 0.11,
             FallbackCameraRaycast = true,
         }
+    },
+    Settings = {
+        MenuKey = Enum.KeyCode.RightShift,
     }
 }
 
