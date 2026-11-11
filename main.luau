@@ -1088,7 +1088,7 @@ function GameHook.Destroy()
 end
 
 -------------------------------------------------------------------
--- UI Engine (Rayfield Sidebar Tabs & Non-Blocking Callbacks)
+-- UI Engine (LinoriaLib Zero-Lag High-FPS Standard)
 -------------------------------------------------------------------
 local function createDebounced(fn, delay)
     local last = 0
