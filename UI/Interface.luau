@@ -1,26 +1,44 @@
 local Interface = {}
 
-local function createDebounced(fn, delay)
-    local last = 0
-    local pending = false
-    return function(...)
-        local args = {...}
-        local now = os.clock()
-        if now - last >= delay then
-            last = now
-            fn(table.unpack(args))
-        elseif not pending then
-            pending = true
-            task.delay(delay, function()
-                pending = false
-                last = os.clock()
-                fn(table.unpack(args))
-            end)
-        end
-    end
-end
+local Themes = {
+    ["Default Dark"] = {
+        AccentColor = Color3.fromRGB(0, 85, 255),
+        MainColor = Color3.fromRGB(28, 28, 28),
+        BackgroundColor = Color3.fromRGB(20, 20, 20),
+        OutlineColor = Color3.fromRGB(50, 50, 50),
+        FontColor = Color3.fromRGB(255, 255, 255),
+    },
+    ["Blood Crimson"] = {
+        AccentColor = Color3.fromRGB(255, 40, 60),
+        MainColor = Color3.fromRGB(26, 20, 22),
+        BackgroundColor = Color3.fromRGB(18, 14, 15),
+        OutlineColor = Color3.fromRGB(60, 30, 35),
+        FontColor = Color3.fromRGB(255, 240, 240),
+    },
+    ["Toxic Emerald"] = {
+        AccentColor = Color3.fromRGB(0, 230, 110),
+        MainColor = Color3.fromRGB(20, 28, 24),
+        BackgroundColor = Color3.fromRGB(14, 20, 16),
+        OutlineColor = Color3.fromRGB(30, 55, 40),
+        FontColor = Color3.fromRGB(240, 255, 245),
+    },
+    ["Cyberpunk Violet"] = {
+        AccentColor = Color3.fromRGB(170, 50, 255),
+        MainColor = Color3.fromRGB(25, 20, 32),
+        BackgroundColor = Color3.fromRGB(16, 12, 22),
+        OutlineColor = Color3.fromRGB(55, 35, 70),
+        FontColor = Color3.fromRGB(250, 240, 255),
+    },
+    ["Midnight Sapphire"] = {
+        AccentColor = Color3.fromRGB(0, 200, 255),
+        MainColor = Color3.fromRGB(18, 24, 34),
+        BackgroundColor = Color3.fromRGB(12, 16, 24),
+        OutlineColor = Color3.fromRGB(35, 50, 70),
+        FontColor = Color3.fromRGB(240, 250, 255),
+    },
+}
 
-function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, onUnload: () -> ())
+function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, Chams: any, onUnload: () -> ())
     local env = (typeof(getgenv) == "function" and getgenv()) or _G
     if env.LinoriaLib and typeof(env.LinoriaLib.Unload) == "function" then
         pcall(env.LinoriaLib.Unload)
@@ -42,7 +60,7 @@ function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, onU
     local Window = Library:CreateWindow({
         Title = "RIVALS HUB",
         Center = true,
-        AutoShow = true,
+        AutoShow = false,
         TabPadding = 8,
         MenuFadeTime = 0.1,
     })
@@ -50,42 +68,182 @@ function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, onU
     local esp = Config.Visuals.ESP
     local tr = Config.Visuals.Tracers
 
-    local debouncedUpdateColors = createDebounced(function()
-        if Aura and Aura.UpdateColors then
-            Aura.UpdateColors(Config)
-        end
-    end, 0.04)
+    local function applyTheme(themeName: string)
+        local t = Themes[themeName]
+        if not t or not Library then return end
+        Library.AccentColor = t.AccentColor
+        Library.AccentColorDark = Library:GetDarkerColor(t.AccentColor)
+        Library.MainColor = t.MainColor
+        Library.BackgroundColor = t.BackgroundColor
+        Library.OutlineColor = t.OutlineColor
+        Library.FontColor = t.FontColor
+        Library:UpdateColorsUsingRegistry()
+    end
 
     local Tabs = {
-        ESP = Window:AddTab("Aura ESP"),
+        ESP = Window:AddTab("ESP"),
         Tracers = Window:AddTab("Bullet Tracers"),
         Settings = Window:AddTab("Settings"),
     }
 
     -------------------------------------------------------------------
-    -- TAB 1: Aura ESP
+    -- TAB 1: ESP (2D Overlay & 3D World Visuals)
     -------------------------------------------------------------------
-    local ESPBox = Tabs.ESP:AddLeftGroupbox("ESP Controls")
+    local OverlayBox = Tabs.ESP:AddLeftGroupbox("2D Overlay ESP")
 
-    ESPBox:AddToggle("AuraToggle", {
+    OverlayBox:AddToggle("BoxToggle", {
+        Text = "Box ESP",
+        Default = esp.Box,
+        Tooltip = "Draw 2D bounding boxes around players",
+        Callback = function(value)
+            esp.Box = value
+        end,
+    }):AddColorPicker("BoxColorPicker", {
+        Default = esp.BoxColor,
+        Title = "Box Color",
+        Callback = function(value)
+            esp.BoxColor = value
+        end,
+    })
+
+    OverlayBox:AddToggle("SkeletonToggle", {
+        Text = "Skeleton ESP",
+        Default = esp.Skeleton,
+        Tooltip = "Draw real-time bone lines connecting player joints",
+        Callback = function(value)
+            esp.Skeleton = value
+        end,
+    }):AddColorPicker("SkeletonColorPicker", {
+        Default = esp.SkeletonColor,
+        Title = "Skeleton Color",
+        Callback = function(value)
+            esp.SkeletonColor = value
+        end,
+    })
+
+    OverlayBox:AddToggle("NameToggle", {
+        Text = "Name ESP",
+        Default = esp.Name,
+        Tooltip = "Display player name above character",
+        Callback = function(value)
+            esp.Name = value
+        end,
+    }):AddColorPicker("NameColorPicker", {
+        Default = esp.NameColor,
+        Title = "Name Color",
+        Callback = function(value)
+            esp.NameColor = value
+        end,
+    })
+
+    OverlayBox:AddToggle("HealthToggle", {
+        Text = "Health Bar",
+        Default = esp.Health,
+        Tooltip = "Render dynamic health bar on box side",
+        Callback = function(value)
+            esp.Health = value
+        end,
+    }):AddColorPicker("HealthColorPicker", {
+        Default = esp.HealthColor,
+        Title = "Health Bar Color",
+        Callback = function(value)
+            esp.HealthColor = value
+        end,
+    })
+
+    OverlayBox:AddToggle("DistanceToggle", {
+        Text = "Distance ESP",
+        Default = esp.Distance,
+        Tooltip = "Display distance in studs below player",
+        Callback = function(value)
+            esp.Distance = value
+        end,
+    }):AddColorPicker("DistanceColorPicker", {
+        Default = esp.DistanceColor,
+        Title = "Distance Color",
+        Callback = function(value)
+            esp.DistanceColor = value
+        end,
+    })
+
+    OverlayBox:AddToggle("WeaponToggle", {
+        Text = "Weapon & Ammo",
+        Default = esp.Weapon,
+        Tooltip = "Display equipped weapon and ammo counter",
+        Callback = function(value)
+            esp.Weapon = value
+        end,
+    }):AddColorPicker("WeaponColorPicker", {
+        Default = esp.WeaponColor,
+        Title = "Weapon Color",
+        Callback = function(value)
+            esp.WeaponColor = value
+        end,
+    })
+
+    local WorldBox = Tabs.ESP:AddRightGroupbox("3D World ESP (Chams & Aura)")
+
+    WorldBox:AddToggle("ChamsToggle", {
+        Text = "Chams",
+        Default = esp.Chams,
+        Tooltip = "Render body highlight chams on players",
+        Callback = function(value)
+            esp.Chams = value
+            if Chams and GameHook then
+                GameHook.RefreshVisuals(Config, Aura, Chams)
+            end
+        end,
+    }):AddColorPicker("ChamsColorPicker", {
+        Default = esp.ChamsColor,
+        Title = "Chams Color",
+        Callback = function(value)
+            esp.ChamsColor = value
+            if Chams and GameHook then
+                GameHook.RefreshVisuals(Config, Aura, Chams)
+            end
+        end,
+    })
+
+    WorldBox:AddToggle("ChamsThroughWallsToggle", {
+        Text = "Chams Through Walls",
+        Default = esp.ChamsThroughWalls,
+        Tooltip = "Display chams through map geometry",
+        Callback = function(value)
+            esp.ChamsThroughWalls = value
+            if Chams and GameHook then
+                GameHook.RefreshVisuals(Config, Aura, Chams)
+            end
+        end,
+    })
+
+    WorldBox:AddToggle("AuraToggle", {
         Text = "Aura",
         Default = esp.Aura,
-        Tooltip = "Toggle character aura visuals",
+        Tooltip = "Render orbital orbs and flames aura",
         Callback = function(value)
             esp.Aura = value
             if Aura and Aura.SetVisible then
                 Aura.SetVisible(value)
             end
-            if value and GameHook and GameHook.RefreshAuras then
-                GameHook.RefreshAuras(Config, Aura)
+            if value and GameHook then
+                GameHook.RefreshVisuals(Config, Aura, Chams)
+            end
+        end,
+    }):AddColorPicker("EnemyColorPicker", {
+        Default = esp.Colors.Enemy,
+        Title = "Enemy Aura Color",
+        Callback = function(value)
+            esp.Colors.Enemy = value
+            if Aura and Aura.UpdateColors then
+                Aura.UpdateColors(Config)
             end
         end,
     })
 
-    ESPBox:AddToggle("ThroughWallsToggle", {
-        Text = "Through Walls",
+    WorldBox:AddToggle("AuraThroughWallsToggle", {
+        Text = "Aura Through Walls",
         Default = esp.ThroughWalls,
-        Tooltip = "Show highlights through geometry (AlwaysOnTop vs Occluded)",
+        Tooltip = "Display aura highlights through walls",
         Callback = function(value)
             esp.ThroughWalls = value
             if Aura and Aura.UpdateThroughWalls then
@@ -94,86 +252,40 @@ function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, onU
         end,
     })
 
-    ESPBox:AddToggle("IncludeLocalToggle", {
+    WorldBox:AddToggle("IncludeLocalToggle", {
         Text = "Include Local Player",
         Default = esp.IncludeLocal,
-        Tooltip = "Render aura on your own character",
+        Tooltip = "Render visuals on your own character",
         Callback = function(value)
             esp.IncludeLocal = value
-            if GameHook and GameHook.RefreshAuras then
-                GameHook.RefreshAuras(Config, Aura)
+            if GameHook then
+                GameHook.RefreshVisuals(Config, Aura, Chams)
             end
         end,
     })
 
-    local ColorBox = Tabs.ESP:AddRightGroupbox("Color Palette")
-
-    ColorBox:AddLabel("Local Color"):AddColorPicker("LocalColorPicker", {
-        Default = esp.Colors.Local,
-        Title = "Local Color",
-        Callback = function(value)
-            esp.Colors.Local = value
-            debouncedUpdateColors()
-        end,
-    })
-
-    ColorBox:AddLabel("Ally Color"):AddColorPicker("AllyColorPicker", {
+    WorldBox:AddLabel("Ally Color"):AddColorPicker("AllyColorPicker", {
         Default = esp.Colors.Ally,
         Title = "Ally Color",
         Callback = function(value)
             esp.Colors.Ally = value
-            debouncedUpdateColors()
-        end,
-    })
-
-    ColorBox:AddLabel("Enemy Color"):AddColorPicker("EnemyColorPicker", {
-        Default = esp.Colors.Enemy,
-        Title = "Enemy Color",
-        Callback = function(value)
-            esp.Colors.Enemy = value
-            debouncedUpdateColors()
-        end,
-    })
-
-    local ModBox = Tabs.ESP:AddLeftGroupbox("Customization")
-
-    ModBox:AddToggle("AngelWingsToggle", {
-        Text = "Angel Wings",
-        Default = esp.UseWings,
-        Tooltip = "Toggle flapping wings on self",
-        Callback = function(value)
-            esp.UseWings = value
-            if GameHook and GameHook.RefreshAuras then
-                GameHook.RefreshAuras(Config, Aura)
+            if Aura and Aura.UpdateColors then
+                Aura.UpdateColors(Config)
+            end
+            if Chams and GameHook then
+                GameHook.RefreshVisuals(Config, Aura, Chams)
             end
         end,
     })
 
-    ModBox:AddSlider("OrbCountSlider", {
-        Text = "Orb Count",
-        Default = esp.OrbCount,
-        Min = 1,
-        Max = 5,
-        Rounding = 0,
-        Suffix = " orbs",
+    WorldBox:AddLabel("Local Color"):AddColorPicker("LocalColorPicker", {
+        Default = esp.Colors.Local,
+        Title = "Local Color",
         Callback = function(value)
-            esp.OrbCount = math.floor(value)
-            if GameHook and GameHook.RefreshAuras then
-                GameHook.RefreshAuras(Config, Aura)
+            esp.Colors.Local = value
+            if Aura and Aura.UpdateColors then
+                Aura.UpdateColors(Config)
             end
-        end,
-    })
-
-    ModBox:AddSlider("IntensitySlider", {
-        Text = "Intensity",
-        Default = esp.Intensity,
-        Min = 0.5,
-        Max = 2.5,
-        Rounding = 1,
-        Suffix = "x",
-        Callback = function(value)
-            esp.Intensity = value
-            debouncedUpdateColors()
         end,
     })
 
@@ -185,21 +297,12 @@ function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, onU
     TracerBox:AddToggle("TracersToggle", {
         Text = "Bullet Tracers",
         Default = tr.Enabled,
-        Tooltip = "Hook real gunshots and render spiral tracers",
+        Tooltip = "Hook gunshots and render spiral bullet beams",
         Callback = function(value)
             tr.Enabled = value
             if not value and Tracers and Tracers.Cleanup then
                 Tracers.Cleanup()
             end
-        end,
-    })
-
-    TracerBox:AddToggle("FallbackRaycastToggle", {
-        Text = "Click Fallback Raycast",
-        Default = tr.FallbackCameraRaycast,
-        Tooltip = "Fires a tracer on mouse click if gun effect isn't present",
-        Callback = function(value)
-            tr.FallbackCameraRaycast = value
         end,
     })
 
@@ -215,7 +318,7 @@ function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, onU
         end,
     })
 
-    local TracerColorBox = Tabs.Tracers:AddRightGroupbox("Colors & Dynamics")
+    local TracerColorBox = Tabs.Tracers:AddRightGroupbox("Tracer Colors")
 
     TracerColorBox:AddLabel("Friendly Color"):AddColorPicker("FriendlyColorPicker", {
         Default = tr.FriendlyColor,
@@ -233,51 +336,45 @@ function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, onU
         end,
     })
 
-    TracerColorBox:AddSlider("SpiralSpeedSlider", {
-        Text = "Spiral Speed",
-        Default = tr.SpiralSpeed or 420,
-        Min = 200,
-        Max = 800,
-        Rounding = 0,
-        Suffix = " studs/s",
-        Callback = function(value)
-            tr.SpiralSpeed = math.floor(value)
-        end,
-    })
-
-    TracerColorBox:AddSlider("SpiralRadiusSlider", {
-        Text = "Spiral Radius",
-        Default = tr.SpiralRadius or 0.32,
-        Min = 0.1,
-        Max = 0.8,
-        Rounding = 2,
-        Suffix = " studs",
-        Callback = function(value)
-            tr.SpiralRadius = value
-        end,
-    })
-
     -------------------------------------------------------------------
     -- TAB 3: Settings
     -------------------------------------------------------------------
     local MenuBox = Tabs.Settings:AddLeftGroupbox("Menu Settings")
 
-    MenuBox:AddLabel("Toggle Keybind: RightShift / RightControl")
+    local KeyLabel = MenuBox:AddLabel("Menu Keybind")
+    KeyLabel:AddKeyPicker("MenuKeyPicker", {
+        Default = "RightShift",
+        NoUI = false,
+        Text = "Menu Keybind",
+        Callback = function()
+        end,
+    })
+    Library.ToggleKeybind = Library.Options and Library.Options.MenuKeyPicker
 
-    MenuBox:AddButton({
-        Text = "Unload Hub",
-        Func = function()
-            Library:Unload()
+    MenuBox:AddDropdown("ThemeDropdown", {
+        Values = { "Default Dark", "Blood Crimson", "Toxic Emerald", "Cyberpunk Violet", "Midnight Sapphire" },
+        Default = 1,
+        Multi = false,
+        Text = "UI Theme",
+        Tooltip = "Select menu color scheme",
+        Callback = function(value)
+            Config.Settings.Theme = value
+            applyTheme(value)
         end,
     })
 
-    local InfoBox = Tabs.Settings:AddRightGroupbox("Diagnostics")
-    InfoBox:AddLabel("Engine: Zero-Allocation Luau")
-    InfoBox:AddLabel("Hooks: TracerEffect + FighterController")
-    InfoBox:AddLabel("Status: Running at full FPS")
+    MenuBox:AddToggle("WatermarkToggle", {
+        Text = "Show Watermark",
+        Default = Config.Settings.ShowWatermark,
+        Tooltip = "Toggle screen watermark display",
+        Callback = function(value)
+            Config.Settings.ShowWatermark = value
+            Library:SetWatermarkVisibility(value)
+        end,
+    })
 
-    Library:SetWatermark("RIVALS HUB | Zero-Lag Edition")
-    Library:SetWatermarkVisibility(true)
+    Library:SetWatermark("RIVALS HUB | Zero-Lag")
+    Library:SetWatermarkVisibility(Config.Settings.ShowWatermark)
 
     Library:OnUnload(function()
         if typeof(onUnload) == "function" then
@@ -285,7 +382,7 @@ function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, onU
         end
     end)
 
-    Library:Notify("Rivals Hub loaded successfully!", 3)
+    Library:Notify("Rivals Hub loaded (Press RightShift to show menu)", 4)
 
     Interface.Library = Library
     Interface.Window = Window

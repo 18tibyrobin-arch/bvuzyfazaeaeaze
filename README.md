@@ -1,12 +1,12 @@
 # Rivals Visuals Hub
 
-Ultra-lightweight visuals client for RIVALS (Roblox) featuring customizable Aura ESP and game-hooked spiral bullet tracers, powered by the high-performance **LinoriaLib** UI engine (zero blur, zero canvasgroup lag, pure FPS).
+Ultra-lightweight visuals client for RIVALS (Roblox) featuring complete 2D/3D ESP and game-hooked spiral bullet tracers, powered by **LinoriaLib** (zero blur, zero canvasgroup lag, pure FPS).
 
 ---
 
 ## Loadstring
 
-Run this in your executor:
+Run this in your executor (menu is hidden by default, press `RightShift` to open):
 
 ```lua
 loadstring(game:HttpGet("https://raw.githubusercontent.com/18tibyrobin-arch/bvuzyfazaeaeaze/main/main.luau"))()
@@ -22,31 +22,48 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/18tibyrobin-arch/bvuz
 
 ## Navigation & Controls
 
-* **Toggle Menu**: Press `RightShift` or `RightControl`
-* **Unload**: Click `Unload Hub` under the **Settings** tab to cleanly disconnect all hooks and remove visuals
+* **Toggle Menu**: Press `RightShift` or `RightControl` (Menu is hidden upon initialization)
+* **Custom Themes**: Select between 5 built-in themes under the **Settings** tab:
+  * `Default Dark` (Classic blue accent on charcoal)
+  * `Blood Crimson` (Vivid red accent)
+  * `Toxic Emerald` (Neon green accent)
+  * `Cyberpunk Violet` (Vibrant purple accent)
+  * `Midnight Sapphire` (Electric cyan accent)
+* **Watermark**: Toggle watermark visibility under the **Settings** tab
 
 ---
 
 ## Features
 
-### Aura ESP Tab
-* **Aura** — Toggle aura effects on characters (Local, Allies, Enemies).
-* **Through Walls** — Toggle highlight visibility through geometry (`AlwaysOnTop` vs `Occluded`).
-* **Include Local Player** — Render aura on your own character.
-* **Color Palette** — Instant in-place color pickers for Local, Ally, and Enemy players without lag.
-* **Angel Wings** — Dynamic geometry wings on local player with harmonic flapping.
-* **Customization** — Sliders for Orb Count (1-5) and Intensity multiplier (0.5x-2.5x).
+### ESP Tab
+* **2D Overlay ESP (Left Column)**:
+  * **Box ESP** — 2D bounding boxes with attached color picker.
+  * **Skeleton ESP** — Real-time bone lines connecting joints with attached color picker.
+  * **Name ESP** — Display player name with attached color picker.
+  * **Health Bar** — Dynamic health-colored bar on box side.
+  * **Distance ESP** — Distance readout in studs with attached color picker.
+  * **Weapon & Ammo** — Current equipped tool/weapon and ammo counter with attached color picker.
+* **3D World ESP (Right Column)**:
+  * **Chams** — Body highlight chams with attached color picker.
+  * **Chams Through Walls** — Toggle chams visibility through geometry.
+  * **Aura** — Orbital orbs and dual flames aura with enemy color picker.
+  * **Aura Through Walls** — Toggle aura highlight through walls.
+  * **Include Local Player** — Render visuals on self.
+  * **Ally Color** — Color picker for teammates.
+  * **Local Color** — Color picker for local player.
 
 ### Bullet Tracers Tab
-* **Bullet Tracers** — Native hook directly to `TracerEffect.Play` for real weapons fired in-game.
-* **Duration** — Adjustable slider for beam lifetime and fadeout (0.1s – 2.0s).
-* **Friendly Color** — Color picker for self and teammate bullet beams.
-* **Enemy Color** — Separately configurable color picker for enemy shots.
-* **Spiral Physics** — Sliders for Spiral Speed (200-800 studs/s) and Spiral Radius (0.1-0.8 studs).
-* **Click Fallback Raycast** — Optional mouse click raycast fallback.
+* **Bullet Tracers (Left Column)**:
+  * **Tracers** — Hook real weapon gunshots via client `TracerEffect`.
+  * **Duration** — Adjustable slider for beam lifetime (0.1s – 2.0s).
+* **Tracer Colors (Right Column)**:
+  * **Friendly Color** — Color picker for local and teammate shots.
+  * **Enemy Color** — Separately configurable color picker for enemy shots.
 
 ### Settings Tab
-* **Menu Settings** — Unload Hub and diagnostics.
+* **Menu Keybind** — Configure keybind to open/close menu.
+* **UI Theme** — Dropdown of 5 custom themes with real-time palette updates.
+* **Show Watermark** — Toggle screen watermark display.
 
 ---
 
@@ -57,9 +74,11 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/18tibyrobin-arch/bvuz
 │   ├── Config.luau        # Central configuration table
 │   └── GameHook.luau      # FighterController and TracerEffect hooking
 ├── UI/
-│   └── Interface.luau     # LinoriaLib high-performance UI
+│   └── Interface.luau     # LinoriaLib UI setup with 5 themes
 ├── Visuals/
-│   ├── Aura.luau          # V5 Aura engine with world-space orbs & wings
+│   ├── Aura.luau          # V5 Aura engine with world-space orbs & dual flames
+│   ├── Chams.luau         # Body highlight chams engine
+│   ├── ESP2D.luau         # 2D Box, Skeleton, Name, Health, Distance, Weapon
 │   └── Tracers.luau       # Game-hooked spiral tracer engine
 ├── init.luau              # Modular entry point
 ├── main.luau              # Self-contained release bundle

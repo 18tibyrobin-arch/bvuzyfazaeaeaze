@@ -1,12 +1,6 @@
---[[
-    RIVALS HUB - Visuals Client (High Performance Edition)
-    Zero-allocation in-place rendering engine.
-]]
-
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 if not LocalPlayer then
@@ -21,13 +15,27 @@ end
 local TAU = math.pi * 2
 local kp = NumberSequenceKeypoint.new
 
--------------------------------------------------------------------
--- Config
--------------------------------------------------------------------
 local Config = {
     Tag = "RivalsHubV1",
     Visuals = {
         ESP = {
+            Box = false,
+            BoxColor = Color3.fromRGB(255, 255, 255),
+            Skeleton = false,
+            SkeletonColor = Color3.fromRGB(255, 255, 255),
+            Name = false,
+            NameColor = Color3.fromRGB(255, 255, 255),
+            Health = false,
+            HealthColor = Color3.fromRGB(0, 255, 120),
+            Distance = false,
+            DistanceColor = Color3.fromRGB(200, 200, 200),
+            Weapon = false,
+            WeaponColor = Color3.fromRGB(255, 220, 100),
+
+            Chams = false,
+            ChamsThroughWalls = true,
+            ChamsColor = Color3.fromRGB(255, 60, 60),
+
             Aura = true,
             ThroughWalls = true,
             IncludeLocal = true,
@@ -55,14 +63,14 @@ local Config = {
             SpiralTwist = 1.25,
             MaxDistance = 800,
             Interval = 0.11,
-            FallbackCameraRaycast = true,
         }
+    },
+    Settings = {
+        Theme = "Default Dark",
+        ShowWatermark = true,
     }
 }
 
--------------------------------------------------------------------
--- Helpers
--------------------------------------------------------------------
 local function findPart(parent: Instance, name: string): BasePart?
     local inst = parent:FindFirstChild(name)
     if inst and inst:IsA("BasePart") then return inst end
@@ -138,49 +146,6 @@ local function buildCosmeticPart(name: string, size: Vector3, color: Color3, tra
     return p
 end
 
-local function weldTo(part0: BasePart, part1: Part, c0: CFrame, instancesList: {Instance}): Weld
-    local w = Instance.new("Weld")
-    w.Part0 = part0
-    w.Part1 = part1
-    w.C0 = c0
-    w:SetAttribute(Config.Tag, true)
-    w.Parent = part1
-    table.insert(instancesList, w)
-    return w
-end
-
-local function buildWing(character: Model, anchor: BasePart, side: number, instancesList: {Instance}): Weld
-    local wingRoot = buildCosmeticPart("RH_WingRoot", Vector3.new(0.2, 0.2, 0.2), Color3.new(1, 1, 1), 1, character, instancesList)
-    local rootWeld = weldTo(anchor, wingRoot, CFrame.new(0.35 * side, 0.55, 0.62), instancesList)
-
-    local feathers = {
-        { 14, 2.0, 0.42 },
-        { 36, 2.5, 0.50 },
-        { 58, 2.8, 0.55 },
-        { 80, 2.5, 0.50 },
-        { 100, 2.0, 0.42 },
-    }
-
-    for i, f in ipairs(feathers) do
-        local ang, len, width = f[1], f[2], f[3]
-        local feather = buildCosmeticPart("RH_Feather", Vector3.new(0.14, len, width), Color3.new(1, 1, 1), 0.05, character, instancesList)
-        local fw = Instance.new("Weld")
-        fw.Part0 = wingRoot
-        fw.Part1 = feather
-        fw.C0 = CFrame.new(0, 0, 0.035 * i)
-            * CFrame.Angles(0, 0, math.rad(ang) * -side)
-            * CFrame.new(0, len / 2, 0)
-        fw:SetAttribute(Config.Tag, true)
-        fw.Parent = feather
-        table.insert(instancesList, fw)
-    end
-
-    return rootWeld
-end
-
--------------------------------------------------------------------
--- Aura Engine (Non-Destructive & Zero-Allocation Updates)
--------------------------------------------------------------------
 local Aura = {}
 Aura.Tracked = setmetatable({}, { __mode = "k" })
 
@@ -325,7 +290,6 @@ function Aura.Apply(character: Model, isAllyTeam: boolean)
         orbs = {},
         orbTrails = {},
         emitters = {},
-        wingWelds = nil,
         instances = instancesList,
         smoothPos = nil,
     }
@@ -395,13 +359,6 @@ function Aura.Apply(character: Model, isAllyTeam: boolean)
             table.insert(data.orbTrails, orbTrail)
             table.insert(data.orbs, orb)
         end
-    end
-
-    if isLocalChar and espCfg.UseWings then
-        data.wingWelds = {
-            buildWing(character, anchor, -1, instancesList),
-            buildWing(character, anchor, 1, instancesList),
-        }
     end
 
     if espCfg.UseFlames then
@@ -545,21 +502,6 @@ function Aura.Step(t: number, dt: number)
                     end
                 end
             end
-
-            if data.wingWelds then
-                local flap = math.sin(t * 2.6)
-                local yaw = math.rad(28) + math.rad(20) * flap
-                local lift = math.rad(8) * flap
-                local wl, wr = data.wingWelds[1], data.wingWelds[2]
-                if wl and wl.Parent then
-                    wl.C0 = CFrame.new(-0.35, 0.55 + 0.06 * flap, 0.62)
-                        * CFrame.Angles(0, yaw, math.rad(12) + lift)
-                end
-                if wr and wr.Parent then
-                    wr.C0 = CFrame.new(0.35, 0.55 + 0.06 * flap, 0.62)
-                        * CFrame.Angles(0, -yaw, -(math.rad(12) + lift))
-                end
-            end
         end
     end
 
@@ -568,9 +510,453 @@ function Aura.Step(t: number, dt: number)
     end
 end
 
--------------------------------------------------------------------
--- Bullet Tracers System (Capped & Fast Cleanup)
--------------------------------------------------------------------
+local Chams = {}
+Chams.Highlights = setmetatable({}, { __mode = "k" })
+
+function Chams.Apply(character: Model, isAlly: boolean, isLocal: boolean)
+    local espCfg = Config.Visuals.ESP
+    if not character or not character.Parent then return end
+    if isLocal and not espCfg.IncludeLocal then
+        Chams.Remove(character)
+        return
+    end
+
+    local hl = Chams.Highlights[character]
+    if not hl or not hl.Parent then
+        hl = Instance.new("Highlight")
+        hl.Name = "RH_Chams"
+        hl.Adornee = character
+        hl:SetAttribute(Config.Tag .. "_Chams", true)
+        hl.Parent = character
+        Chams.Highlights[character] = hl
+    end
+
+    local chamsColor = isAlly and espCfg.Colors.Ally or espCfg.ChamsColor
+    local h, s, v = chamsColor:ToHSV()
+    local outlineColor = Color3.fromHSV(h, math.clamp(s * 0.45, 0, 1), math.clamp(v * 1.3, 0, 1))
+
+    hl.Enabled = espCfg.Chams
+    hl.DepthMode = espCfg.ChamsThroughWalls and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
+    hl.FillColor = chamsColor
+    hl.FillTransparency = 0.5
+    hl.OutlineColor = outlineColor
+    hl.OutlineTransparency = 0.05
+end
+
+function Chams.Remove(character: Model?)
+    if not character then return end
+    local hl = Chams.Highlights[character]
+    if hl and hl.Parent then
+        hl:Destroy()
+    end
+    Chams.Highlights[character] = nil
+end
+
+function Chams.UpdateProperties(characters: {[Model]: {player: Player?, isAlly: boolean, isLocal: boolean}})
+    local espCfg = Config.Visuals.ESP
+    for model, info in pairs(characters) do
+        if espCfg.Chams then
+            Chams.Apply(model, info.isAlly, info.isLocal)
+        else
+            Chams.Remove(model)
+        end
+    end
+end
+
+function Chams.Cleanup()
+    for _, hl in pairs(Chams.Highlights) do
+        if hl and hl.Parent then
+            hl:Destroy()
+        end
+    end
+    table.clear(Chams.Highlights)
+end
+
+local ESP2D = {}
+ESP2D.Entries = {}
+ESP2D.HasDrawing = (typeof(Drawing) == "table" and typeof(Drawing.new) == "function")
+ESP2D.FallbackGui = nil
+
+local function getFallbackGui(): ScreenGui
+    if ESP2D.FallbackGui and ESP2D.FallbackGui.Parent then
+        return ESP2D.FallbackGui
+    end
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "RH_ESP2D_Fallback"
+    gui.ResetOnSpawn = false
+    gui.DisplayOrder = 999
+    local parentTarget = game:GetService("CoreGui")
+    pcall(function()
+        gui.Parent = parentTarget
+    end)
+    if not gui.Parent then
+        gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+    end
+    ESP2D.FallbackGui = gui
+    return gui
+end
+
+local function createDrawObject(drawType: string, props: {[string]: any})
+    if ESP2D.HasDrawing then
+        local obj = Drawing.new(drawType)
+        for k, v in pairs(props) do
+            obj[k] = v
+        end
+        return obj
+    else
+        local gui = getFallbackGui()
+        if drawType == "Square" then
+            local frame = Instance.new("Frame")
+            frame.BackgroundTransparency = props.Filled and 0 or 1
+            frame.BorderSizePixel = props.Thickness or 1
+            frame.BorderColor3 = props.Color or Color3.new(1, 1, 1)
+            frame.Visible = false
+            frame.Parent = gui
+            return {
+                _inst = frame,
+                Visible = false,
+                Position = Vector2.zero,
+                Size = Vector2.zero,
+                Color = props.Color or Color3.new(1, 1, 1),
+                Thickness = props.Thickness or 1,
+                Remove = function(self) if self._inst then self._inst:Destroy() end end
+            }
+        elseif drawType == "Line" then
+            local frame = Instance.new("Frame")
+            frame.BorderSizePixel = 0
+            frame.Visible = false
+            frame.Parent = gui
+            return {
+                _inst = frame,
+                Visible = false,
+                From = Vector2.zero,
+                To = Vector2.zero,
+                Color = props.Color or Color3.new(1, 1, 1),
+                Thickness = props.Thickness or 1,
+                Remove = function(self) if self._inst then self._inst:Destroy() end end
+            }
+        elseif drawType == "Text" then
+            local label = Instance.new("TextLabel")
+            label.BackgroundTransparency = 1
+            label.TextSize = props.Size or 13
+            label.Font = Enum.Font.RobotoMono
+            label.Visible = false
+            label.Parent = gui
+            return {
+                _inst = label,
+                Visible = false,
+                Position = Vector2.zero,
+                Text = "",
+                Color = props.Color or Color3.new(1, 1, 1),
+                Size = props.Size or 13,
+                Center = props.Center or false,
+                Remove = function(self) if self._inst then self._inst:Destroy() end end
+            }
+        end
+    end
+end
+
+local SKELETON_BONES_R15 = {
+    { "Head", "UpperTorso" },
+    { "UpperTorso", "LowerTorso" },
+    { "UpperTorso", "LeftUpperArm" },
+    { "LeftUpperArm", "LeftLowerArm" },
+    { "LeftLowerArm", "LeftHand" },
+    { "UpperTorso", "RightUpperArm" },
+    { "RightUpperArm", "RightLowerArm" },
+    { "RightLowerArm", "RightHand" },
+    { "LowerTorso", "LeftUpperLeg" },
+    { "LeftUpperLeg", "LeftLowerLeg" },
+    { "LeftLowerLeg", "LeftFoot" },
+    { "LowerTorso", "RightUpperLeg" },
+    { "RightUpperLeg", "RightLowerLeg" },
+    { "RightLowerLeg", "RightFoot" },
+}
+
+local SKELETON_BONES_R6 = {
+    { "Head", "Torso" },
+    { "Torso", "Left Arm" },
+    { "Torso", "Right Arm" },
+    { "Torso", "Left Leg" },
+    { "Torso", "Right Leg" },
+}
+
+function ESP2D.CreateEntry(model: Model)
+    local entry = {
+        model = model,
+        boxOutline = createDrawObject("Square", { Filled = false, Thickness = 3, Color = Color3.new(0, 0, 0), Visible = false }),
+        box = createDrawObject("Square", { Filled = false, Thickness = 1, Color = Color3.new(1, 1, 1), Visible = false }),
+        healthBg = createDrawObject("Line", { Thickness = 4, Color = Color3.new(0, 0, 0), Visible = false }),
+        healthBar = createDrawObject("Line", { Thickness = 2, Color = Color3.fromRGB(0, 255, 120), Visible = false }),
+        name = createDrawObject("Text", { Size = 13, Center = true, Outline = true, Color = Color3.new(1, 1, 1), Visible = false }),
+        distance = createDrawObject("Text", { Size = 11, Center = true, Outline = true, Color = Color3.fromRGB(200, 200, 200), Visible = false }),
+        weapon = createDrawObject("Text", { Size = 11, Center = true, Outline = true, Color = Color3.fromRGB(255, 220, 100), Visible = false }),
+        skeleton = {},
+    }
+
+    for i = 1, 14 do
+        table.insert(entry.skeleton, createDrawObject("Line", { Thickness = 1, Color = Color3.new(1, 1, 1), Visible = false }))
+    end
+
+    ESP2D.Entries[model] = entry
+    return entry
+end
+
+function ESP2D.RemoveEntry(model: Model)
+    local entry = ESP2D.Entries[model]
+    if entry then
+        entry.boxOutline:Remove()
+        entry.box:Remove()
+        entry.healthBg:Remove()
+        entry.healthBar:Remove()
+        entry.name:Remove()
+        entry.distance:Remove()
+        entry.weapon:Remove()
+        for _, line in ipairs(entry.skeleton) do
+            line:Remove()
+        end
+        ESP2D.Entries[model] = nil
+    end
+end
+
+function ESP2D.HideEntry(entry: any)
+    entry.boxOutline.Visible = false
+    entry.box.Visible = false
+    entry.healthBg.Visible = false
+    entry.healthBar.Visible = false
+    entry.name.Visible = false
+    entry.distance.Visible = false
+    entry.weapon.Visible = false
+    for _, line in ipairs(entry.skeleton) do
+        line.Visible = false
+    end
+end
+
+local function syncFallback(obj: any, drawType: string)
+    if not ESP2D.HasDrawing and obj and obj._inst then
+        local inst = obj._inst
+        inst.Visible = obj.Visible
+        if not obj.Visible then return end
+        if drawType == "Square" then
+            inst.Position = UDim2.fromOffset(obj.Position.X, obj.Position.Y)
+            inst.Size = UDim2.fromOffset(obj.Size.X, obj.Size.Y)
+            inst.BorderColor3 = obj.Color
+        elseif drawType == "Line" then
+            local diff = obj.To - obj.From
+            local len = diff.Magnitude
+            inst.Size = UDim2.fromOffset(len, obj.Thickness)
+            inst.Position = UDim2.fromOffset(obj.From.X, obj.From.Y)
+            inst.Rotation = math.deg(math.atan2(diff.Y, diff.X))
+            inst.BackgroundColor3 = obj.Color
+        elseif drawType == "Text" then
+            inst.Position = UDim2.fromOffset(obj.Position.X - (obj.Center and 75 or 0), obj.Position.Y)
+            inst.Size = UDim2.fromOffset(150, 16)
+            inst.Text = obj.Text
+            inst.TextColor3 = obj.Color
+        end
+    end
+end
+
+function ESP2D.Step(camera: Camera, characters: {[Model]: {player: Player?, isAlly: boolean, isLocal: boolean}})
+    local espCfg = Config.Visuals.ESP
+    local any2DEnabled = espCfg.Box or espCfg.Skeleton or espCfg.Name or espCfg.Health or espCfg.Distance or espCfg.Weapon
+
+    for model, entry in pairs(ESP2D.Entries) do
+        if not characters[model] or not model.Parent then
+            ESP2D.RemoveEntry(model)
+        end
+    end
+
+    if not any2DEnabled then
+        for _, entry in pairs(ESP2D.Entries) do
+            ESP2D.HideEntry(entry)
+        end
+        return
+    end
+
+    local camPos = camera.CFrame.Position
+
+    for model, info in pairs(characters) do
+        if info.isLocal and not espCfg.IncludeLocal then
+            if ESP2D.Entries[model] then
+                ESP2D.HideEntry(ESP2D.Entries[model])
+            end
+            continue
+        end
+
+        local entry = ESP2D.Entries[model] or ESP2D.CreateEntry(model)
+        local root = model:FindFirstChild("HumanoidRootPart")
+        local head = model:FindFirstChild("Head")
+        local hum = model:FindFirstChildOfClass("Humanoid")
+
+        if not root or not head or not model.Parent then
+            ESP2D.HideEntry(entry)
+            continue
+        end
+
+        local rootPos = root.Position
+        local headPos = head.Position
+        local rootViewport, onScreen = camera:WorldToViewportPoint(rootPos)
+
+        if not onScreen or rootViewport.Z <= 0 then
+            ESP2D.HideEntry(entry)
+            continue
+        end
+
+        local topViewport = camera:WorldToViewportPoint(headPos + Vector3.new(0, 0.7, 0))
+        local bottomViewport = camera:WorldToViewportPoint(rootPos - Vector3.new(0, 2.8, 0))
+
+        local boxHeight = math.abs(bottomViewport.Y - topViewport.Y)
+        local boxWidth = boxHeight * 0.62
+        local boxX = topViewport.X - boxWidth / 2
+        local boxY = topViewport.Y
+
+        local isAlly = info.isAlly
+        local defaultColor = isAlly and espCfg.Colors.Ally or espCfg.Colors.Enemy
+
+        if espCfg.Box then
+            local col = espCfg.BoxColor or defaultColor
+            entry.boxOutline.Position = Vector2.new(boxX - 1, boxY - 1)
+            entry.boxOutline.Size = Vector2.new(boxWidth + 2, boxHeight + 2)
+            entry.boxOutline.Visible = true
+
+            entry.box.Position = Vector2.new(boxX, boxY)
+            entry.box.Size = Vector2.new(boxWidth, boxHeight)
+            entry.box.Color = col
+            entry.box.Visible = true
+        else
+            entry.boxOutline.Visible = false
+            entry.box.Visible = false
+        end
+
+        if espCfg.Health then
+            local health = hum and hum.Health or 100
+            local maxHealth = (hum and hum.MaxHealth and hum.MaxHealth > 0) and hum.MaxHealth or 100
+            local hpPct = math.clamp(health / maxHealth, 0, 1)
+
+            local barX = boxX - 5
+            local barTopY = boxY
+            local barBottomY = boxY + boxHeight
+
+            entry.healthBg.From = Vector2.new(barX, barTopY)
+            entry.healthBg.To = Vector2.new(barX, barBottomY)
+            entry.healthBg.Visible = true
+
+            local fillTopY = barBottomY - (boxHeight * hpPct)
+            local hpColor = Color3.fromHSV(hpPct * 0.33, 1, 1)
+
+            entry.healthBar.From = Vector2.new(barX, fillTopY)
+            entry.healthBar.To = Vector2.new(barX, barBottomY)
+            entry.healthBar.Color = hpColor
+            entry.healthBar.Visible = true
+        else
+            entry.healthBg.Visible = false
+            entry.healthBar.Visible = false
+        end
+
+        if espCfg.Name then
+            local playerName = info.player and (info.player.DisplayName or info.player.Name) or model.Name
+            entry.name.Text = playerName
+            entry.name.Position = Vector2.new(topViewport.X, boxY - 15)
+            entry.name.Color = espCfg.NameColor or defaultColor
+            entry.name.Visible = true
+        else
+            entry.name.Visible = false
+        end
+
+        local textOffsetY = 2
+
+        local distStuds = (camPos - rootPos).Magnitude
+        if espCfg.Distance then
+            entry.distance.Text = string.format("%d studs", math.floor(distStuds))
+            entry.distance.Position = Vector2.new(topViewport.X, boxY + boxHeight + textOffsetY)
+            entry.distance.Color = espCfg.DistanceColor or Color3.fromRGB(200, 200, 200)
+            entry.distance.Visible = true
+            textOffsetY += 12
+        else
+            entry.distance.Visible = false
+        end
+
+        if espCfg.Weapon then
+            local tool = model:FindFirstChildOfClass("Tool")
+            local weaponName = tool and tool.Name or model:GetAttribute("EquippedWeapon")
+            if not weaponName or #weaponName == 0 then
+                weaponName = "Hands"
+            end
+
+            local ammoVal = tool and (tool:GetAttribute("Ammo") or tool:GetAttribute("Clip"))
+            local weaponText = ammoVal and string.format("%s [%d]", weaponName, ammoVal) or weaponName
+
+            entry.weapon.Text = weaponText
+            entry.weapon.Position = Vector2.new(topViewport.X, boxY + boxHeight + textOffsetY)
+            entry.weapon.Color = espCfg.WeaponColor or Color3.fromRGB(255, 220, 100)
+            entry.weapon.Visible = true
+        else
+            entry.weapon.Visible = false
+        end
+
+        if espCfg.Skeleton then
+            local isR15 = (model:FindFirstChild("UpperTorso") ~= nil)
+            local bonePairs = isR15 and SKELETON_BONES_R15 or SKELETON_BONES_R6
+            local skColor = espCfg.SkeletonColor or defaultColor
+
+            for i, pair in ipairs(bonePairs) do
+                local line = entry.skeleton[i]
+                if line then
+                    local p1 = model:FindFirstChild(pair[1])
+                    local p2 = model:FindFirstChild(pair[2])
+                    if p1 and p2 and p1:IsA("BasePart") and p2:IsA("BasePart") then
+                        local v1, on1 = camera:WorldToViewportPoint(p1.Position)
+                        local v2, on2 = camera:WorldToViewportPoint(p2.Position)
+                        if on1 and on2 and v1.Z > 0 and v2.Z > 0 then
+                            line.From = Vector2.new(v1.X, v1.Y)
+                            line.To = Vector2.new(v2.X, v2.Y)
+                            line.Color = skColor
+                            line.Visible = true
+                        else
+                            line.Visible = false
+                        end
+                    else
+                        line.Visible = false
+                    end
+                end
+            end
+            for i = #bonePairs + 1, #entry.skeleton do
+                entry.skeleton[i].Visible = false
+            end
+        else
+            for _, line in ipairs(entry.skeleton) do
+                line.Visible = false
+            end
+        end
+
+        if not ESP2D.HasDrawing then
+            syncFallback(entry.boxOutline, "Square")
+            syncFallback(entry.box, "Square")
+            syncFallback(entry.healthBg, "Line")
+            syncFallback(entry.healthBar, "Line")
+            syncFallback(entry.name, "Text")
+            syncFallback(entry.distance, "Text")
+            syncFallback(entry.weapon, "Text")
+            for _, l in ipairs(entry.skeleton) do
+                syncFallback(l, "Line")
+            end
+        end
+    end
+end
+
+function ESP2D.Cleanup()
+    for model in pairs(ESP2D.Entries) do
+        ESP2D.RemoveEntry(model)
+    end
+    table.clear(ESP2D.Entries)
+
+    if ESP2D.FallbackGui then
+        ESP2D.FallbackGui:Destroy()
+        ESP2D.FallbackGui = nil
+    end
+end
+
 local Tracers = {}
 Tracers.ActiveTracers = {}
 Tracers.Folder = nil
@@ -694,35 +1080,6 @@ function Tracers.FireTracer(origin: Vector3, hitPos: Vector3, isEnemy: boolean?)
     })
 end
 
-function Tracers.SpawnTracerFromCamera()
-    local cam = Workspace.CurrentCamera
-    if not cam then return end
-    local tCfg = Config.Visuals.Tracers
-
-    local origin = (cam.CFrame * CFrame.new(0.7, -0.5, -1)).Position
-    local char = LocalPlayer.Character
-    if char then
-        local rightArm = char:FindFirstChild("RightUpperArm") or char:FindFirstChild("Right Arm")
-        if rightArm and rightArm:IsA("BasePart") then
-            origin = (rightArm.CFrame * CFrame.new(0, -rightArm.Size.Y * 0.5, 0)).Position
-        end
-    end
-
-    local params = RaycastParams.new()
-    params.FilterType = Enum.RaycastFilterType.Exclude
-    local filter: {Instance} = {}
-    if char then table.insert(filter, char) end
-    if Tracers.Folder then table.insert(filter, Tracers.Folder) end
-    params.FilterDescendantsInstances = filter
-
-    local camPos = cam.CFrame.Position
-    local look = cam.CFrame.LookVector
-    local result = Workspace:Raycast(camPos, look * tCfg.MaxDistance, params)
-    local hitPos = result and result.Position or (camPos + look * tCfg.MaxDistance)
-
-    Tracers.FireTracer(origin, hitPos, false)
-end
-
 function Tracers.Step(dt: number)
     local tCfg = Config.Visuals.Tracers
     for i = #Tracers.ActiveTracers, 1, -1 do
@@ -764,15 +1121,11 @@ function Tracers.Cleanup()
     end
 end
 
--------------------------------------------------------------------
--- Game Hook System (Deduplicated Characters & Single Flow)
--------------------------------------------------------------------
 local GameHook = {}
 GameHook.Connections = {}
 GameHook.PlayerConnections = {}
 GameHook.FighterController = nil
 GameHook.TracerHooked = false
-GameHook.FiringHeld = false
 
 function GameHook.IsAlly(player: Player?): boolean
     if not player or player == LocalPlayer then
@@ -837,33 +1190,32 @@ function GameHook.GetUniqueCharacters(): {[Model]: {player: Player?, isAlly: boo
     return results
 end
 
-function GameHook.RefreshAuras()
-    if not Config.Visuals.ESP.Aura then
-        Aura.SetVisible(false)
-        return
-    end
-
-    Aura.SetVisible(true)
+function GameHook.RefreshVisuals()
     local chars = GameHook.GetUniqueCharacters()
 
-    for m, info in pairs(chars) do
-        if info.isLocal and not Config.Visuals.ESP.IncludeLocal then
-            Aura.Remove(m)
-        else
-            if not Aura.Tracked[m] then
-                Aura.Apply(m, info.isAlly)
+    if Config.Visuals.ESP.Aura then
+        Aura.SetVisible(true)
+        for m, info in pairs(chars) do
+            if info.isLocal and not Config.Visuals.ESP.IncludeLocal then
+                Aura.Remove(m)
+            else
+                if not Aura.Tracked[m] then
+                    Aura.Apply(m, info.isAlly)
+                end
             end
         end
-    end
-
-    for m in pairs(Aura.Tracked) do
-        if not chars[m] then
-            Aura.Remove(m)
+        for m in pairs(Aura.Tracked) do
+            if not chars[m] then
+                Aura.Remove(m)
+            end
         end
+        Aura.UpdateColors()
+        Aura.UpdateThroughWalls(Config.Visuals.ESP.ThroughWalls)
+    else
+        Aura.SetVisible(false)
     end
 
-    Aura.UpdateColors()
-    Aura.UpdateThroughWalls(Config.Visuals.ESP.ThroughWalls)
+    Chams.UpdateProperties(chars)
 end
 
 function GameHook.HookTracers()
@@ -923,14 +1275,20 @@ function GameHook.Init()
     GameHook.HookTracers()
 
     local function onCharacterModel(m: Model?, isAlly: boolean, isLocal: boolean)
-        if not m or not m.Parent or not Config.Visuals.ESP.Aura then return end
+        if not m or not m.Parent then return end
         if isLocal and not Config.Visuals.ESP.IncludeLocal then return end
         local hum = m:WaitForChild("Humanoid", 3)
         local root = m:WaitForChild("HumanoidRootPart", 3)
         if not hum or not root then return end
         task.wait(0.04)
         if not m.Parent then return end
-        Aura.Apply(m, isAlly)
+
+        if Config.Visuals.ESP.Aura then
+            Aura.Apply(m, isAlly)
+        end
+        if Config.Visuals.ESP.Chams then
+            Chams.Apply(m, isAlly, isLocal)
+        end
     end
 
     local function watchPlayer(player: Player)
@@ -949,9 +1307,11 @@ function GameHook.Init()
         end))
         table.insert(pConns, player.CharacterRemoving:Connect(function(char)
             Aura.Remove(char)
+            Chams.Remove(char)
+            ESP2D.RemoveEntry(char)
         end))
-        table.insert(pConns, player:GetAttributeChangedSignal("TeamID"):Connect(GameHook.RefreshAuras))
-        table.insert(pConns, player:GetPropertyChangedSignal("Team"):Connect(GameHook.RefreshAuras))
+        table.insert(pConns, player:GetAttributeChangedSignal("TeamID"):Connect(GameHook.RefreshVisuals))
+        table.insert(pConns, player:GetPropertyChangedSignal("Team"):Connect(GameHook.RefreshVisuals))
 
         if player.Character and player.Character.Parent then
             task.spawn(onCharacterModel, player.Character, GameHook.IsAlly(player), isLocal)
@@ -968,6 +1328,8 @@ function GameHook.Init()
         local m = GameHook.GetModelForPlayer(player)
         if m then
             Aura.Remove(m)
+            Chams.Remove(m)
+            ESP2D.RemoveEntry(m)
         end
     end
 
@@ -977,8 +1339,8 @@ function GameHook.Init()
 
     table.insert(GameHook.Connections, Players.PlayerAdded:Connect(watchPlayer))
     table.insert(GameHook.Connections, Players.PlayerRemoving:Connect(unwatchPlayer))
-    table.insert(GameHook.Connections, LocalPlayer:GetAttributeChangedSignal("TeamID"):Connect(GameHook.RefreshAuras))
-    table.insert(GameHook.Connections, LocalPlayer:GetPropertyChangedSignal("Team"):Connect(GameHook.RefreshAuras))
+    table.insert(GameHook.Connections, LocalPlayer:GetAttributeChangedSignal("TeamID"):Connect(GameHook.RefreshVisuals))
+    table.insert(GameHook.Connections, LocalPlayer:GetPropertyChangedSignal("Team"):Connect(GameHook.RefreshVisuals))
 
     local fc = GameHook.FighterController
     if fc then
@@ -996,6 +1358,8 @@ function GameHook.Init()
                 table.insert(GameHook.Connections, fighter.EntityRemoved:Connect(function(entity)
                     if entity and entity.Model then
                         Aura.Remove(entity.Model)
+                        Chams.Remove(entity.Model)
+                        ESP2D.RemoveEntry(entity.Model)
                     end
                 end))
             end
@@ -1013,35 +1377,24 @@ function GameHook.Init()
         end
     end
 
-    table.insert(GameHook.Connections, UserInputService.InputBegan:Connect(function(input, gpe)
-        if gpe then return end
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            GameHook.FiringHeld = true
-        end
-    end))
-
-    table.insert(GameHook.Connections, UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            GameHook.FiringHeld = false
-        end
-    end))
-
     local t = 0
-    local lastTracerAt = 0
+    local cam = Workspace.CurrentCamera or Workspace:FindFirstChildOfClass("Camera")
+
     table.insert(GameHook.Connections, RunService.RenderStepped:Connect(function(dt)
         t += dt
+        local currentCam = Workspace.CurrentCamera or cam
+
         if Config.Visuals.ESP.Aura then
             Aura.Step(t, dt)
         end
 
         if Config.Visuals.Tracers.Enabled then
-            if Config.Visuals.Tracers.FallbackCameraRaycast and GameHook.FiringHeld then
-                if t - lastTracerAt >= (Config.Visuals.Tracers.Interval or 0.11) then
-                    lastTracerAt = t
-                    Tracers.SpawnTracerFromCamera()
-                end
-            end
             Tracers.Step(dt)
+        end
+
+        if currentCam then
+            local chars = GameHook.GetUniqueCharacters()
+            ESP2D.Step(currentCam, chars)
         end
     end))
 
@@ -1050,19 +1403,21 @@ function GameHook.Init()
         scanTimer += dt
         if scanTimer < 1.5 then return end
         scanTimer = 0
-        if not Config.Visuals.ESP.Aura then return end
 
         local chars = GameHook.GetUniqueCharacters()
         for m, info in pairs(chars) do
-            if not Aura.Tracked[m] then
+            if Config.Visuals.ESP.Aura and not Aura.Tracked[m] then
                 if not info.isLocal or Config.Visuals.ESP.IncludeLocal then
                     Aura.Apply(m, info.isAlly)
                 end
             end
+            if Config.Visuals.ESP.Chams and not Chams.Highlights[m] then
+                Chams.Apply(m, info.isAlly, info.isLocal)
+            end
         end
     end))
 
-    GameHook.RefreshAuras()
+    GameHook.RefreshVisuals()
 end
 
 function GameHook.Destroy()
@@ -1077,41 +1432,56 @@ function GameHook.Destroy()
         end
     end
     table.clear(GameHook.PlayerConnections)
-    GameHook.FiringHeld = false
 
     for model in pairs(Aura.Tracked) do
         Aura.Remove(model)
     end
     table.clear(Aura.Tracked)
 
+    Chams.Cleanup()
+    ESP2D.Cleanup()
     Tracers.Cleanup()
 end
 
--------------------------------------------------------------------
--- UI Engine (LinoriaLib Zero-Lag High-FPS Standard)
--------------------------------------------------------------------
-local function createDebounced(fn, delay)
-    local last = 0
-    local pending = false
-    return function(...)
-        local args = {...}
-        local now = os.clock()
-        if now - last >= delay then
-            last = now
-            fn(table.unpack(args))
-        elseif not pending then
-            pending = true
-            task.delay(delay, function()
-                pending = false
-                last = os.clock()
-                fn(table.unpack(args))
-            end)
-        end
-    end
-end
+local Themes = {
+    ["Default Dark"] = {
+        AccentColor = Color3.fromRGB(0, 85, 255),
+        MainColor = Color3.fromRGB(28, 28, 28),
+        BackgroundColor = Color3.fromRGB(20, 20, 20),
+        OutlineColor = Color3.fromRGB(50, 50, 50),
+        FontColor = Color3.fromRGB(255, 255, 255),
+    },
+    ["Blood Crimson"] = {
+        AccentColor = Color3.fromRGB(255, 40, 60),
+        MainColor = Color3.fromRGB(26, 20, 22),
+        BackgroundColor = Color3.fromRGB(18, 14, 15),
+        OutlineColor = Color3.fromRGB(60, 30, 35),
+        FontColor = Color3.fromRGB(255, 240, 240),
+    },
+    ["Toxic Emerald"] = {
+        AccentColor = Color3.fromRGB(0, 230, 110),
+        MainColor = Color3.fromRGB(20, 28, 24),
+        BackgroundColor = Color3.fromRGB(14, 20, 16),
+        OutlineColor = Color3.fromRGB(30, 55, 40),
+        FontColor = Color3.fromRGB(240, 255, 245),
+    },
+    ["Cyberpunk Violet"] = {
+        AccentColor = Color3.fromRGB(170, 50, 255),
+        MainColor = Color3.fromRGB(25, 20, 32),
+        BackgroundColor = Color3.fromRGB(16, 12, 22),
+        OutlineColor = Color3.fromRGB(55, 35, 70),
+        FontColor = Color3.fromRGB(250, 240, 255),
+    },
+    ["Midnight Sapphire"] = {
+        AccentColor = Color3.fromRGB(0, 200, 255),
+        MainColor = Color3.fromRGB(18, 24, 34),
+        BackgroundColor = Color3.fromRGB(12, 16, 24),
+        OutlineColor = Color3.fromRGB(35, 50, 70),
+        FontColor = Color3.fromRGB(240, 250, 255),
+    },
+}
 
 local function buildUI(onUnload: () -> ())
-    local env = (typeof(getgenv) == "function" and getgenv()) or _G
     if env.LinoriaLib and typeof(env.LinoriaLib.Unload) == "function" then
         pcall(env.LinoriaLib.Unload)
         env.LinoriaLib = nil
@@ -1131,7 +1501,7 @@ local function buildUI(onUnload: () -> ())
     local Window = Library:CreateWindow({
         Title = "RIVALS HUB",
         Center = true,
-        AutoShow = true,
+        AutoShow = false,
         TabPadding = 8,
         MenuFadeTime = 0.1,
     })
@@ -1139,144 +1509,215 @@ local function buildUI(onUnload: () -> ())
     local esp = Config.Visuals.ESP
     local tr = Config.Visuals.Tracers
 
-    local debouncedUpdateColors = createDebounced(function()
-        Aura.UpdateColors()
-    end, 0.04)
+    local function applyTheme(themeName: string)
+        local t = Themes[themeName]
+        if not t or not Library then return end
+        Library.AccentColor = t.AccentColor
+        Library.AccentColorDark = Library:GetDarkerColor(t.AccentColor)
+        Library.MainColor = t.MainColor
+        Library.BackgroundColor = t.BackgroundColor
+        Library.OutlineColor = t.OutlineColor
+        Library.FontColor = t.FontColor
+        Library:UpdateColorsUsingRegistry()
+    end
 
     local Tabs = {
-        ESP = Window:AddTab("Aura ESP"),
+        ESP = Window:AddTab("ESP"),
         Tracers = Window:AddTab("Bullet Tracers"),
         Settings = Window:AddTab("Settings"),
     }
 
-    -------------------------------------------------------------------
-    -- TAB 1: Aura ESP
-    -------------------------------------------------------------------
-    local ESPBox = Tabs.ESP:AddLeftGroupbox("ESP Controls")
+    local OverlayBox = Tabs.ESP:AddLeftGroupbox("2D Overlay ESP")
 
-    ESPBox:AddToggle("AuraToggle", {
+    OverlayBox:AddToggle("BoxToggle", {
+        Text = "Box ESP",
+        Default = esp.Box,
+        Tooltip = "Draw 2D bounding boxes around players",
+        Callback = function(value)
+            esp.Box = value
+        end,
+    }):AddColorPicker("BoxColorPicker", {
+        Default = esp.BoxColor,
+        Title = "Box Color",
+        Callback = function(value)
+            esp.BoxColor = value
+        end,
+    })
+
+    OverlayBox:AddToggle("SkeletonToggle", {
+        Text = "Skeleton ESP",
+        Default = esp.Skeleton,
+        Tooltip = "Draw real-time bone lines connecting player joints",
+        Callback = function(value)
+            esp.Skeleton = value
+        end,
+    }):AddColorPicker("SkeletonColorPicker", {
+        Default = esp.SkeletonColor,
+        Title = "Skeleton Color",
+        Callback = function(value)
+            esp.SkeletonColor = value
+        end,
+    })
+
+    OverlayBox:AddToggle("NameToggle", {
+        Text = "Name ESP",
+        Default = esp.Name,
+        Tooltip = "Display player name above character",
+        Callback = function(value)
+            esp.Name = value
+        end,
+    }):AddColorPicker("NameColorPicker", {
+        Default = esp.NameColor,
+        Title = "Name Color",
+        Callback = function(value)
+            esp.NameColor = value
+        end,
+    })
+
+    OverlayBox:AddToggle("HealthToggle", {
+        Text = "Health Bar",
+        Default = esp.Health,
+        Tooltip = "Render dynamic health bar on box side",
+        Callback = function(value)
+            esp.Health = value
+        end,
+    }):AddColorPicker("HealthColorPicker", {
+        Default = esp.HealthColor,
+        Title = "Health Bar Color",
+        Callback = function(value)
+            esp.HealthColor = value
+        end,
+    })
+
+    OverlayBox:AddToggle("DistanceToggle", {
+        Text = "Distance ESP",
+        Default = esp.Distance,
+        Tooltip = "Display distance in studs below player",
+        Callback = function(value)
+            esp.Distance = value
+        end,
+    }):AddColorPicker("DistanceColorPicker", {
+        Default = esp.DistanceColor,
+        Title = "Distance Color",
+        Callback = function(value)
+            esp.DistanceColor = value
+        end,
+    })
+
+    OverlayBox:AddToggle("WeaponToggle", {
+        Text = "Weapon & Ammo",
+        Default = esp.Weapon,
+        Tooltip = "Display equipped weapon and ammo counter",
+        Callback = function(value)
+            esp.Weapon = value
+        end,
+    }):AddColorPicker("WeaponColorPicker", {
+        Default = esp.WeaponColor,
+        Title = "Weapon Color",
+        Callback = function(value)
+            esp.WeaponColor = value
+        end,
+    })
+
+    local WorldBox = Tabs.ESP:AddRightGroupbox("3D World ESP (Chams & Aura)")
+
+    WorldBox:AddToggle("ChamsToggle", {
+        Text = "Chams",
+        Default = esp.Chams,
+        Tooltip = "Render body highlight chams on players",
+        Callback = function(value)
+            esp.Chams = value
+            GameHook.RefreshVisuals()
+        end,
+    }):AddColorPicker("ChamsColorPicker", {
+        Default = esp.ChamsColor,
+        Title = "Chams Color",
+        Callback = function(value)
+            esp.ChamsColor = value
+            GameHook.RefreshVisuals()
+        end,
+    })
+
+    WorldBox:AddToggle("ChamsThroughWallsToggle", {
+        Text = "Chams Through Walls",
+        Default = esp.ChamsThroughWalls,
+        Tooltip = "Display chams through map geometry",
+        Callback = function(value)
+            esp.ChamsThroughWalls = value
+            GameHook.RefreshVisuals()
+        end,
+    })
+
+    WorldBox:AddToggle("AuraToggle", {
         Text = "Aura",
         Default = esp.Aura,
-        Tooltip = "Toggle character aura visuals",
+        Tooltip = "Render orbital orbs and flames aura",
         Callback = function(value)
             esp.Aura = value
             Aura.SetVisible(value)
             if value then
-                GameHook.RefreshAuras()
+                GameHook.RefreshVisuals()
             end
+        end,
+    }):AddColorPicker("EnemyColorPicker", {
+        Default = esp.Colors.Enemy,
+        Title = "Enemy Aura Color",
+        Callback = function(value)
+            esp.Colors.Enemy = value
+            Aura.UpdateColors()
         end,
     })
 
-    ESPBox:AddToggle("ThroughWallsToggle", {
-        Text = "Through Walls",
+    WorldBox:AddToggle("AuraThroughWallsToggle", {
+        Text = "Aura Through Walls",
         Default = esp.ThroughWalls,
-        Tooltip = "Show highlights through geometry (AlwaysOnTop vs Occluded)",
+        Tooltip = "Display aura highlights through walls",
         Callback = function(value)
             esp.ThroughWalls = value
             Aura.UpdateThroughWalls(value)
         end,
     })
 
-    ESPBox:AddToggle("IncludeLocalToggle", {
+    WorldBox:AddToggle("IncludeLocalToggle", {
         Text = "Include Local Player",
         Default = esp.IncludeLocal,
-        Tooltip = "Render aura on your own character",
+        Tooltip = "Render visuals on your own character",
         Callback = function(value)
             esp.IncludeLocal = value
-            GameHook.RefreshAuras()
+            GameHook.RefreshVisuals()
         end,
     })
 
-    local ColorBox = Tabs.ESP:AddRightGroupbox("Color Palette")
-
-    ColorBox:AddLabel("Local Color"):AddColorPicker("LocalColorPicker", {
-        Default = esp.Colors.Local,
-        Title = "Local Color",
-        Callback = function(value)
-            esp.Colors.Local = value
-            debouncedUpdateColors()
-        end,
-    })
-
-    ColorBox:AddLabel("Ally Color"):AddColorPicker("AllyColorPicker", {
+    WorldBox:AddLabel("Ally Color"):AddColorPicker("AllyColorPicker", {
         Default = esp.Colors.Ally,
         Title = "Ally Color",
         Callback = function(value)
             esp.Colors.Ally = value
-            debouncedUpdateColors()
+            Aura.UpdateColors()
+            GameHook.RefreshVisuals()
         end,
     })
 
-    ColorBox:AddLabel("Enemy Color"):AddColorPicker("EnemyColorPicker", {
-        Default = esp.Colors.Enemy,
-        Title = "Enemy Color",
+    WorldBox:AddLabel("Local Color"):AddColorPicker("LocalColorPicker", {
+        Default = esp.Colors.Local,
+        Title = "Local Color",
         Callback = function(value)
-            esp.Colors.Enemy = value
-            debouncedUpdateColors()
+            esp.Colors.Local = value
+            Aura.UpdateColors()
         end,
     })
 
-    local ModBox = Tabs.ESP:AddLeftGroupbox("Customization")
-
-    ModBox:AddToggle("AngelWingsToggle", {
-        Text = "Angel Wings",
-        Default = esp.UseWings,
-        Tooltip = "Toggle flapping wings on self",
-        Callback = function(value)
-            esp.UseWings = value
-            GameHook.RefreshAuras()
-        end,
-    })
-
-    ModBox:AddSlider("OrbCountSlider", {
-        Text = "Orb Count",
-        Default = esp.OrbCount,
-        Min = 1,
-        Max = 5,
-        Rounding = 0,
-        Suffix = " orbs",
-        Callback = function(value)
-            esp.OrbCount = math.floor(value)
-            GameHook.RefreshAuras()
-        end,
-    })
-
-    ModBox:AddSlider("IntensitySlider", {
-        Text = "Intensity",
-        Default = esp.Intensity,
-        Min = 0.5,
-        Max = 2.5,
-        Rounding = 1,
-        Suffix = "x",
-        Callback = function(value)
-            esp.Intensity = value
-            debouncedUpdateColors()
-        end,
-    })
-
-    -------------------------------------------------------------------
-    -- TAB 2: Bullet Tracers
-    -------------------------------------------------------------------
     local TracerBox = Tabs.Tracers:AddLeftGroupbox("Bullet Tracers")
 
     TracerBox:AddToggle("TracersToggle", {
         Text = "Bullet Tracers",
         Default = tr.Enabled,
-        Tooltip = "Hook real gunshots and render spiral tracers",
+        Tooltip = "Hook gunshots and render spiral bullet beams",
         Callback = function(value)
             tr.Enabled = value
             if not value then
                 Tracers.Cleanup()
             end
-        end,
-    })
-
-    TracerBox:AddToggle("FallbackRaycastToggle", {
-        Text = "Click Fallback Raycast",
-        Default = tr.FallbackCameraRaycast,
-        Tooltip = "Fires a tracer on mouse click if gun effect isn't present",
-        Callback = function(value)
-            tr.FallbackCameraRaycast = value
         end,
     })
 
@@ -1292,7 +1733,7 @@ local function buildUI(onUnload: () -> ())
         end,
     })
 
-    local TracerColorBox = Tabs.Tracers:AddRightGroupbox("Colors & Dynamics")
+    local TracerColorBox = Tabs.Tracers:AddRightGroupbox("Tracer Colors")
 
     TracerColorBox:AddLabel("Friendly Color"):AddColorPicker("FriendlyColorPicker", {
         Default = tr.FriendlyColor,
@@ -1310,51 +1751,42 @@ local function buildUI(onUnload: () -> ())
         end,
     })
 
-    TracerColorBox:AddSlider("SpiralSpeedSlider", {
-        Text = "Spiral Speed",
-        Default = tr.SpiralSpeed or 420,
-        Min = 200,
-        Max = 800,
-        Rounding = 0,
-        Suffix = " studs/s",
-        Callback = function(value)
-            tr.SpiralSpeed = math.floor(value)
-        end,
-    })
-
-    TracerColorBox:AddSlider("SpiralRadiusSlider", {
-        Text = "Spiral Radius",
-        Default = tr.SpiralRadius or 0.32,
-        Min = 0.1,
-        Max = 0.8,
-        Rounding = 2,
-        Suffix = " studs",
-        Callback = function(value)
-            tr.SpiralRadius = value
-        end,
-    })
-
-    -------------------------------------------------------------------
-    -- TAB 3: Settings
-    -------------------------------------------------------------------
     local MenuBox = Tabs.Settings:AddLeftGroupbox("Menu Settings")
 
-    MenuBox:AddLabel("Toggle Keybind: RightShift / RightControl")
+    local KeyLabel = MenuBox:AddLabel("Menu Keybind")
+    KeyLabel:AddKeyPicker("MenuKeyPicker", {
+        Default = "RightShift",
+        NoUI = false,
+        Text = "Menu Keybind",
+        Callback = function()
+        end,
+    })
+    Library.ToggleKeybind = Library.Options and Library.Options.MenuKeyPicker
 
-    MenuBox:AddButton({
-        Text = "Unload Hub",
-        Func = function()
-            Library:Unload()
+    MenuBox:AddDropdown("ThemeDropdown", {
+        Values = { "Default Dark", "Blood Crimson", "Toxic Emerald", "Cyberpunk Violet", "Midnight Sapphire" },
+        Default = 1,
+        Multi = false,
+        Text = "UI Theme",
+        Tooltip = "Select menu color scheme",
+        Callback = function(value)
+            Config.Settings.Theme = value
+            applyTheme(value)
         end,
     })
 
-    local InfoBox = Tabs.Settings:AddRightGroupbox("Diagnostics")
-    InfoBox:AddLabel("Engine: Zero-Allocation Luau")
-    InfoBox:AddLabel("Hooks: TracerEffect + FighterController")
-    InfoBox:AddLabel("Status: Running at full FPS")
+    MenuBox:AddToggle("WatermarkToggle", {
+        Text = "Show Watermark",
+        Default = Config.Settings.ShowWatermark,
+        Tooltip = "Toggle screen watermark display",
+        Callback = function(value)
+            Config.Settings.ShowWatermark = value
+            Library:SetWatermarkVisibility(value)
+        end,
+    })
 
-    Library:SetWatermark("RIVALS HUB | Zero-Lag Edition")
-    Library:SetWatermarkVisibility(true)
+    Library:SetWatermark("RIVALS HUB | Zero-Lag")
+    Library:SetWatermarkVisibility(Config.Settings.ShowWatermark)
 
     Library:OnUnload(function()
         if typeof(onUnload) == "function" then
@@ -1362,7 +1794,7 @@ local function buildUI(onUnload: () -> ())
         end
     end)
 
-    Library:Notify("Rivals Hub loaded successfully!", 3)
+    Library:Notify("Rivals Hub loaded (Press RightShift to show menu)", 4)
 
     return {
         Library = Library,
@@ -1370,13 +1802,12 @@ local function buildUI(onUnload: () -> ())
     }
 end
 
--------------------------------------------------------------------
--- App Lifecycle
--------------------------------------------------------------------
 local App = {
     Config = Config,
     Aura = Aura,
     Tracers = Tracers,
+    ESP2D = ESP2D,
+    Chams = Chams,
     GameHook = GameHook,
     UI = nil,
 }

@@ -2,6 +2,26 @@ local Config = {
     Tag = "RivalsHubV1",
     Visuals = {
         ESP = {
+            -- 2D Drawing Overlay
+            Box = false,
+            BoxColor = Color3.fromRGB(255, 255, 255),
+            Skeleton = false,
+            SkeletonColor = Color3.fromRGB(255, 255, 255),
+            Name = false,
+            NameColor = Color3.fromRGB(255, 255, 255),
+            Health = false,
+            HealthColor = Color3.fromRGB(0, 255, 120),
+            Distance = false,
+            DistanceColor = Color3.fromRGB(200, 200, 200),
+            Weapon = false,
+            WeaponColor = Color3.fromRGB(255, 220, 100),
+
+            -- 3D Chams
+            Chams = false,
+            ChamsThroughWalls = true,
+            ChamsColor = Color3.fromRGB(255, 60, 60),
+
+            -- 3D Aura
             Aura = true,
             ThroughWalls = true,
             IncludeLocal = true,
@@ -29,11 +49,11 @@ local Config = {
             SpiralTwist = 1.25,
             MaxDistance = 800,
             Interval = 0.11,
-            FallbackCameraRaycast = true,
         }
     },
     Settings = {
-        MenuKey = Enum.KeyCode.RightShift,
+        Theme = "Default Dark",
+        ShowWatermark = true,
     }
 }
 

@@ -31,6 +31,8 @@ end
 local Config = loadModule("Core/Config.luau")
 local Aura = loadModule("Visuals/Aura.luau")
 local Tracers = loadModule("Visuals/Tracers.luau")
+local ESP2D = loadModule("Visuals/ESP2D.luau")
+local Chams = loadModule("Visuals/Chams.luau")
 local GameHook = loadModule("Core/GameHook.luau")
 local Interface = loadModule("UI/Interface.luau")
 
@@ -43,13 +45,15 @@ local App = {
     Config = Config,
     Aura = Aura,
     Tracers = Tracers,
+    ESP2D = ESP2D,
+    Chams = Chams,
     GameHook = GameHook,
     Interface = nil,
 }
 
 function App.Destroy()
     if App.GameHook then
-        App.GameHook.Destroy(App.Config, App.Aura, App.Tracers)
+        App.GameHook.Destroy(App.Config, App.Aura, App.Tracers, App.ESP2D, App.Chams)
     end
     if App.Interface and App.Interface.Library and App.Interface.Library.Unload then
         pcall(App.Interface.Library.Unload)
@@ -61,8 +65,8 @@ end
 
 env.RivalsHubInstance = App
 
-GameHook.Init(Config, Aura, Tracers)
-App.Interface = Interface.Init(Config, Aura, Tracers, GameHook, function()
+GameHook.Init(Config, Aura, Tracers, ESP2D, Chams)
+App.Interface = Interface.Init(Config, Aura, Tracers, GameHook, Chams, function()
     App.Destroy()
 end)
 

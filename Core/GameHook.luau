@@ -1,6 +1,6 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
 if not LocalPlayer then
@@ -12,7 +12,6 @@ GameHook.Connections = {}
 GameHook.PlayerConnections = {}
 GameHook.FighterController = nil
 GameHook.TracerHooked = false
-GameHook.FiringHeld = false
 
 function GameHook.IsAlly(player: Player?): boolean
     if not player or player == LocalPlayer then
@@ -77,33 +76,36 @@ function GameHook.GetUniqueCharacters(): {[Model]: {player: Player?, isAlly: boo
     return results
 end
 
-function GameHook.RefreshAuras(Config: any, Aura: any)
-    if not Config.Visuals.ESP.Aura then
-        Aura.SetVisible(false)
-        return
-    end
-
-    Aura.SetVisible(true)
+function GameHook.RefreshVisuals(Config: any, Aura: any, Chams: any)
     local chars = GameHook.GetUniqueCharacters()
 
-    for m, info in pairs(chars) do
-        if info.isLocal and not Config.Visuals.ESP.IncludeLocal then
-            Aura.Remove(m)
-        else
-            if not Aura.Tracked[m] then
-                Aura.Apply(m, info.isAlly, Config, Config.Tag)
+    -- 1) Refresh Aura
+    if Config.Visuals.ESP.Aura then
+        Aura.SetVisible(true)
+        for m, info in pairs(chars) do
+            if info.isLocal and not Config.Visuals.ESP.IncludeLocal then
+                Aura.Remove(m)
+            else
+                if not Aura.Tracked[m] then
+                    Aura.Apply(m, info.isAlly, Config, Config.Tag)
+                end
             end
         end
-    end
-
-    for m in pairs(Aura.Tracked) do
-        if not chars[m] then
-            Aura.Remove(m)
+        for m in pairs(Aura.Tracked) do
+            if not chars[m] then
+                Aura.Remove(m)
+            end
         end
+        Aura.UpdateColors(Config)
+        Aura.UpdateThroughWalls(Config.Visuals.ESP.ThroughWalls)
+    else
+        Aura.SetVisible(false)
     end
 
-    Aura.UpdateColors(Config)
-    Aura.UpdateThroughWalls(Config.Visuals.ESP.ThroughWalls)
+    -- 2) Refresh Chams
+    if Chams and Chams.UpdateProperties then
+        Chams.UpdateProperties(Config, chars)
+    end
 end
 
 function GameHook.HookTracers(Config: any, Tracers: any)
@@ -154,7 +156,7 @@ function GameHook.HookTracers(Config: any, Tracers: any)
     end)
 end
 
-function GameHook.Init(Config: any, Aura: any, Tracers: any)
+function GameHook.Init(Config: any, Aura: any, Tracers: any, ESP2D: any, Chams: any)
     pcall(function()
         local controllers = LocalPlayer:WaitForChild("PlayerScripts", 4):WaitForChild("Controllers", 4)
         GameHook.FighterController = require(controllers:WaitForChild("FighterController", 4))
@@ -163,14 +165,20 @@ function GameHook.Init(Config: any, Aura: any, Tracers: any)
     GameHook.HookTracers(Config, Tracers)
 
     local function onCharacterModel(m: Model?, isAlly: boolean, isLocal: boolean)
-        if not m or not m.Parent or not Config.Visuals.ESP.Aura then return end
+        if not m or not m.Parent then return end
         if isLocal and not Config.Visuals.ESP.IncludeLocal then return end
         local hum = m:WaitForChild("Humanoid", 3)
         local root = m:WaitForChild("HumanoidRootPart", 3)
         if not hum or not root then return end
         task.wait(0.04)
         if not m.Parent then return end
-        Aura.Apply(m, isAlly, Config, Config.Tag)
+
+        if Config.Visuals.ESP.Aura then
+            Aura.Apply(m, isAlly, Config, Config.Tag)
+        end
+        if Config.Visuals.ESP.Chams and Chams then
+            Chams.Apply(m, isAlly, isLocal, Config)
+        end
     end
 
     local function watchPlayer(player: Player)
@@ -189,12 +197,14 @@ function GameHook.Init(Config: any, Aura: any, Tracers: any)
         end))
         table.insert(pConns, player.CharacterRemoving:Connect(function(char)
             Aura.Remove(char)
+            if Chams then Chams.Remove(char) end
+            if ESP2D then ESP2D.RemoveEntry(char) end
         end))
         table.insert(pConns, player:GetAttributeChangedSignal("TeamID"):Connect(function()
-            GameHook.RefreshAuras(Config, Aura)
+            GameHook.RefreshVisuals(Config, Aura, Chams)
         end))
         table.insert(pConns, player:GetPropertyChangedSignal("Team"):Connect(function()
-            GameHook.RefreshAuras(Config, Aura)
+            GameHook.RefreshVisuals(Config, Aura, Chams)
         end))
 
         if player.Character and player.Character.Parent then
@@ -212,6 +222,8 @@ function GameHook.Init(Config: any, Aura: any, Tracers: any)
         local m = GameHook.GetModelForPlayer(player)
         if m then
             Aura.Remove(m)
+            if Chams then Chams.Remove(m) end
+            if ESP2D then ESP2D.RemoveEntry(m) end
         end
     end
 
@@ -222,10 +234,10 @@ function GameHook.Init(Config: any, Aura: any, Tracers: any)
     table.insert(GameHook.Connections, Players.PlayerAdded:Connect(watchPlayer))
     table.insert(GameHook.Connections, Players.PlayerRemoving:Connect(unwatchPlayer))
     table.insert(GameHook.Connections, LocalPlayer:GetAttributeChangedSignal("TeamID"):Connect(function()
-        GameHook.RefreshAuras(Config, Aura)
+        GameHook.RefreshVisuals(Config, Aura, Chams)
     end))
     table.insert(GameHook.Connections, LocalPlayer:GetPropertyChangedSignal("Team"):Connect(function()
-        GameHook.RefreshAuras(Config, Aura)
+        GameHook.RefreshVisuals(Config, Aura, Chams)
     end))
 
     local fc = GameHook.FighterController
@@ -244,6 +256,8 @@ function GameHook.Init(Config: any, Aura: any, Tracers: any)
                 table.insert(GameHook.Connections, fighter.EntityRemoved:Connect(function(entity)
                     if entity and entity.Model then
                         Aura.Remove(entity.Model)
+                        if Chams then Chams.Remove(entity.Model) end
+                        if ESP2D then ESP2D.RemoveEntry(entity.Model) end
                     end
                 end))
             end
@@ -261,35 +275,24 @@ function GameHook.Init(Config: any, Aura: any, Tracers: any)
         end
     end
 
-    table.insert(GameHook.Connections, UserInputService.InputBegan:Connect(function(input, gpe)
-        if gpe then return end
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            GameHook.FiringHeld = true
-        end
-    end))
-
-    table.insert(GameHook.Connections, UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            GameHook.FiringHeld = false
-        end
-    end))
-
     local t = 0
-    local lastTracerAt = 0
+    local cam = Workspace.CurrentCamera or Workspace:FindFirstChildOfClass("Camera")
+
     table.insert(GameHook.Connections, RunService.RenderStepped:Connect(function(dt)
         t += dt
+        local currentCam = Workspace.CurrentCamera or cam
+
         if Config.Visuals.ESP.Aura then
             Aura.Step(t, dt, Config)
         end
 
         if Config.Visuals.Tracers.Enabled then
-            if Config.Visuals.Tracers.FallbackCameraRaycast and GameHook.FiringHeld then
-                if t - lastTracerAt >= (Config.Visuals.Tracers.Interval or 0.11) then
-                    lastTracerAt = t
-                    Tracers.SpawnTracerFromCamera(Config, Config.Tag)
-                end
-            end
             Tracers.Step(dt, Config)
+        end
+
+        if ESP2D and currentCam then
+            local chars = GameHook.GetUniqueCharacters()
+            ESP2D.Step(currentCam, Config, chars)
         end
     end))
 
@@ -298,22 +301,24 @@ function GameHook.Init(Config: any, Aura: any, Tracers: any)
         scanTimer += dt
         if scanTimer < 1.5 then return end
         scanTimer = 0
-        if not Config.Visuals.ESP.Aura then return end
 
         local chars = GameHook.GetUniqueCharacters()
         for m, info in pairs(chars) do
-            if not Aura.Tracked[m] then
+            if Config.Visuals.ESP.Aura and not Aura.Tracked[m] then
                 if not info.isLocal or Config.Visuals.ESP.IncludeLocal then
                     Aura.Apply(m, info.isAlly, Config, Config.Tag)
                 end
             end
+            if Config.Visuals.ESP.Chams and Chams and not Chams.Highlights[m] then
+                Chams.Apply(m, info.isAlly, info.isLocal, Config)
+            end
         end
     end))
 
-    GameHook.RefreshAuras(Config, Aura)
+    GameHook.RefreshVisuals(Config, Aura, Chams)
 end
 
-function GameHook.Destroy(Config: any, Aura: any, Tracers: any)
+function GameHook.Destroy(Config: any, Aura: any, Tracers: any, ESP2D: any, Chams: any)
     for _, conn in ipairs(GameHook.Connections) do
         conn:Disconnect()
     end
@@ -325,13 +330,20 @@ function GameHook.Destroy(Config: any, Aura: any, Tracers: any)
         end
     end
     table.clear(GameHook.PlayerConnections)
-    GameHook.FiringHeld = false
 
     if Aura then
         for model in pairs(Aura.Tracked) do
             Aura.Remove(model)
         end
         table.clear(Aura.Tracked)
+    end
+
+    if Chams then
+        Chams.Cleanup()
+    end
+
+    if ESP2D then
+        ESP2D.Cleanup()
     end
 
     if Tracers then
