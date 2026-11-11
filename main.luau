@@ -150,19 +150,19 @@ SkinData.SkinsByWeapon = {
     ["Energy Rifle"] = { "Default", "Apex Rifle", "Enerkey Rifle", "Glorious Energy Rifle", "Hacker Rifle", "Hydro Rifle", "New Year Energy Rifle", "Sol Rifle", "Soul Rifle", "Void Rifle" },
     ["Exogun"] = { "Default", "Exogourd", "Glorious Exogun", "Midnight Festive Exogun", "Pearl Exogun", "Ray Gun", "Repulsor", "Singularity", "Wondergun" },
     ["Fists"] = { "Default", "Boxing Gloves", "Brass Knuckles", "Crab Claws", "Festive Fists", "Fist", "Fists of Hurt", "Glorious Fists", "Pirate Hook", "Pumpkin Claws", "Spy Gloves", "Towerstone Fists" },
-    ["Flamethrower"] = { "Default", "Bubblethrower", "Extinguisher", "Glitterthrower", "Glorious Flamethrower", "Jack O\", "Keythrower", "Lamethrower", "Pixel Flamethrower", "Rainbowthrower", "Snowblower" },
+    ["Flamethrower"] = { "Default", "Bubblethrower", "Extinguisher", "Glitterthrower", "Glorious Flamethrower", "Jack O' Lantern", "Keythrower", "Lamethrower", "Pixel Flamethrower", "Rainbowthrower", "Snowblower" },
     ["Flare Gun"] = { "Default", "Banana Flare", "Dynamite Gun", "Firework Gun", "Glorious Flare Gun", "Pocket Volcano", "Vexed Flare Gun", "Wrapped Flare Gun" },
     ["Flashbang"] = { "Default", "Camera", "Disco Ball", "Glorious Flashbang", "Lightbulb", "Pixel Flashbang", "Shining Star", "Skullbang", "Sol" },
     ["Freeze Ray"] = { "Default", "Bubble Ray", "Cooler", "Glorious Freeze Ray", "Gum Ray", "Spider Ray", "Temporal Ray", "Wrapped Freeze Ray" },
     ["Grappler"] = { "Default", "Arcade Claw", "Fishing Rod", "Genie Lamp", "Glorious Grappler", "Lasso", "Lifeguard Grappler", "Web Shooters" },
     ["Grenade"] = { "Default", "Batnade", "Cuddle Bomb", "Dynamite", "Fizz Bomb", "Frozen Grenade", "Glorious Grenade", "Jingle Grenade", "Keynade", "Soul Grenade", "Water Balloon", "Whoopee Cushion" },
     ["Grenade Launcher"] = { "Default", "Balloon Launcher", "Coconut Launcher", "Gearnade Launcher", "Glorious Grenade Launcher", "Skull Launcher", "Snowball Launcher", "Swashbuckler", "Uranium Launcher" },
-    ["Gunblade"] = { "Default", "Batblade", "Boneblade", "Crude Gunblade", "Elf\", "Glorious Gunblade", "Gunsaw", "Hyper Gunblade", "Keyblade", "Sharkbite" },
+    ["Gunblade"] = { "Default", "Batblade", "Boneblade", "Crude Gunblade", "Elf Blade", "Glorious Gunblade", "Gunsaw", "Hyper Gunblade", "Keyblade", "Sharkbite" },
     ["Handgun"] = { "Default", "Blaster", "Gingerbread Handgun", "Glorious Handgun", "Gumball Handgun", "Hand Gun", "Pixel Handgun", "Pumpkin Handgun", "Sandgun", "Stealth Handgun", "Towerstone Handgun", "Warp Handgun" },
     ["Jump Pad"] = { "Default", "Bounce House", "Flamingo Floatie", "Glorious Jump Pad", "Jolly Man", "Shady Chicken Sandwich", "Spider Web", "Trampoline" },
     ["Katana"] = { "Default", "Arch Katana", "Crystal Katana", "Cutlass", "Evil Trident", "Glorious Katana", "Keytana", "Lightning Bolt", "Linked Sword", "New Year Katana", "Pixel Katana", "Riptide Katana", "Saber", "Stellar Katana", "Swordfish" },
     ["Knife"] = { "Default", "Armature.001", "Balisong", "Birthday Candle", "Caladbolg", "Candy Cane", "Chancla", "Glorious Knife", "Karambat", "Karambit", "Keylisong", "Keyrambit", "Machete", "Pencil", "Shark Tooth", "Trophy Knife" },
-    ["MISSING_WEAPON"] = { "Default", "MISSING_SKIN" },
+    ["MISSING_WEAPON"] = { "Default" },
     ["Maul"] = { "Default", "Ban Hammer", "Clown Hammer", "Excalibur", "Giant Popsicle", "Glorious Maul", "Ice Maul", "Jeremiah", "Sleigh Maul", "Starforge Maul" },
     ["Medkit"] = { "Default", "Box of Chocolates", "Briefcase", "Bucket of Candy", "Glorious Medkit", "Ice Cream", "Laptop", "Medkitty", "Milk & Cookies", "Sandwich" },
     ["Minigun"] = { "Default", "Fighter Jet", "Glorious Minigun", "Lasergun 3000", "Pixel Minigun", "Pumpkin Minigun", "Shark Minigun", "Wrapped Minigun" },
@@ -172,7 +172,7 @@ SkinData.SkinsByWeapon = {
     ["RPG"] = { "Default", "Cupcake Launcher", "Firework Launcher", "Glorious RPG", "Nuke Launcher", "Pencil Launcher", "Pumpkin Launcher", "RPKEY", "Rocket Launcher", "Spaceship Launcher", "Squid Launcher", "Sundae Launcher" },
     ["Revolver"] = { "Default", "Boneclaw Revolver", "Cruise Revolver", "Desert Eagle", "Glorious Revolver", "Keyvolver", "Peppergun", "Peppermint Sheriff", "Sheriff" },
     ["Riot Shield"] = { "Default", "Broken Surfboard", "Door", "Energy Shield", "Glorious Riot Shield", "Masterpiece", "Sled", "Tombstone Shield" },
-    ["Satchel"] = { "Default", "Advanced Satchel", "Bag o\", "Glorious Satchel", "Lifeguard Satchel", "Notebook Satchel", "Pizza Box", "Potion Satchel", "Suspicious Gift" },
+    ["Satchel"] = { "Default", "Advanced Satchel", "Bag o' Bones", "Glorious Satchel", "Lifeguard Satchel", "Notebook Satchel", "Pizza Box", "Potion Satchel", "Suspicious Gift" },
     ["Scythe"] = { "Default", "Anchor", "Bat Scythe", "Bug Net", "Cryo Scythe", "Crystal Scythe", "Glorious Scythe", "Keythe", "Palm Scythe", "Plastic Flamingo", "Sakura Scythe", "Scythe of Death" },
     ["Shorty"] = { "Default", "Balloon Shorty", "Bubble Shorty", "Cannon Shorty", "Demon Shorty", "Glorious Shorty", "Lovely Shorty", "Not So Shorty", "Too Shorty", "Wrapped Shorty" },
     ["Shotgun"] = { "Default", "Balloon Shotgun", "Broomstick", "Cactus Shotgun", "Glorious Shotgun", "Hyper Shotgun", "Shark Shotgun", "Shotkey", "Wrapped Shotgun" },
@@ -181,7 +181,7 @@ SkinData.SkinsByWeapon = {
     ["Sniper"] = { "Default", "Campfire Sniper", "Event Horizon", "Eyething Sniper", "Gingerbread Sniper", "Glorious Sniper", "Hyper Sniper", "Keyper", "Kraken Sniper", "Light Fifty", "Pixel Sniper" },
     ["Spear"] = { "Default", "Chark Kebab", "Fork", "Giant Pencil", "Glorious Spear", "Gravelight", "Plunger", "Studio Light", "Thunderpike" },
     ["Spray"] = { "Default", "Boneclaw Spray", "Campfire Spray", "Glorious Spray", "Key Spray", "Lovely Spray", "Nail Gun", "Pine Spray", "Spray Bottle" },
-    ["Subspace Tripmine"] = { "Default", "DIY Tripmine", "Dev-in-the-Box", "Don\", "Glorious Subspace Tripmine", "Hazard Sign", "Pot o\", "Spring", "Trick or Treat" },
+    ["Subspace Tripmine"] = { "Default", "DIY Tripmine", "Dev-in-the-Box", "Don't Touch", "Glorious Subspace Tripmine", "Hazard Sign", "Pot o' Gold", "Spring", "Trick or Treat" },
     ["Trowel"] = { "Default", "Garden Shovel", "Glorious Trowel", "Paintbrush", "Plastic Shovel", "Pumpkin Carver", "Scooper", "Snow Shovel" },
     ["Uzi"] = { "Default", "Arch Uzi", "Demon Uzi", "Ducky Uzi", "Electro Uzi", "Glorious Uzi", "Keyzi", "Money Gun", "Pine Uzi", "Water Uzi" },
     ["War Horn"] = { "Default", "Air Horn", "Boneclaw Horn", "Glorious War Horn", "Lifeguard Whistle", "Mammoth Horn", "Megaphone", "Trumpet" },
@@ -192,394 +192,51 @@ SkinData.SkinsByWeapon = {
 
 SkinData.Wraps = {
     "Default",
-    ".dll",
-    ".exe",
     "1B Visits",
-    "2025 Wrapping",
-    "2026 Wrapping",
-    "A5",
-    "Accretion",
-    "Aegis",
-    "Amber",
-    "Ancient",
     "Antimatter",
-    "Arabesque",
-    "Arbiter",
-    "Arcane",
-    "Arctic Camo",
-    "Arena",
     "Aurora",
     "Aurum",
-    "Bat Flock",
-    "Beach",
-    "Bee",
-    "Beggar",
-    "Beige",
-    "Birthday Wrapping",
-    "Black",
     "Black Damascus",
     "Black Glass",
-    "Black Granite",
     "Black Opal",
     "Blaze",
-    "Bliss",
     "Blizzard",
-    "Blue",
     "Bluesteel",
-    "Blush",
-    "Blush Wrapping",
     "Bombastic",
-    "Boomore",
-    "Borealis",
-    "Brain",
-    "Brewery",
-    "Brianore",
-    "Bright",
     "Brimstone",
-    "Brown",
-    "Bubbles",
-    "Bunsen",
-    "Cactus",
-    "Candlelight",
     "Candy Apple",
-    "Caned Wrapping",
-    "Carbon Fiber",
-    "Carbon Wrapping",
-    "Cardboard",
-    "Cardinal",
-    "Carmine",
-    "Carpet",
-    "Cartoony Paint",
-    "Cashmere Wrapping",
     "Celestial",
-    "Celtic",
-    "Cerulean",
-    "Cheese",
-    "Chilled Wrapping",
-    "Chromatic",
-    "Chrome",
-    "Chrome Webs",
-    "Circuit",
-    "Clamshell",
-    "Classic",
-    "Clouds",
-    "Clovers",
-    "Cold Metal",
-    "Community",
-    "Conduction",
-    "Confetti Cake",
-    "Cool",
-    "Cool Crochet",
-    "Copper",
-    "Cork",
-    "Cream",
-    "Creamsicle",
-    "Creme Wrapping",
-    "Crime Scene",
     "Crimson",
-    "Crimson Art",
-    "Crossed",
     "Crystallized",
-    "Cursed",
     "Damascus",
-    "Danger",
-    "Dark",
     "Dark Arena",
     "Dark Matter",
-    "Dawn",
-    "Desert Camo",
-    "Devourer",
     "Diamond",
-    "Digital Camo",
-    "Disco",
-    "Dunes",
-    "Dusky Wrapping",
-    "Dutchman",
-    "Eco",
-    "Egg Fried Rice",
-    "Empress",
-    "Encroached",
-    "Encrypt",
-    "Eruption",
-    "Evergreen Wrapping",
-    "Experience",
-    "Facility",
-    "Fame Stars",
-    "Festive Lights",
-    "Fiery",
     "Fire",
-    "Fire Horse",
-    "Fish Scales",
-    "Forest Camo",
-    "Forest Wrapping",
-    "Fortune Wrapping",
-    "Fracture",
-    "Frankenstein",
-    "Frigid",
     "Frostbite",
-    "Frosted",
-    "Frosty Wrapping",
-    "Galvanized",
-    "Geometric",
-    "Gingerbread",
     "Glacier",
-    "Glamour",
-    "Glass",
-    "Glisten",
-    "Glorious",
-    "Glossy",
     "Gold",
-    "Grass",
-    "Green",
-    "Green Goo",
-    "Green Sparkle",
-    "Greenflame",
-    "Groove",
-    "Gunmetal",
-    "Hallow",
-    "Hammered Copper",
-    "Haunted",
-    "Heartfelt",
-    "Heatwave",
-    "Heirloom",
-    "Hesper",
     "Highlighter",
-    "Holly Wrapping",
-    "Hologram",
-    "Hologram Arena",
-    "Honey",
-    "Honeycomb",
-    "Hot Cocoa",
     "Hyperdrive",
-    "Hypnotic",
     "Ice Queen",
-    "Igneous",
-    "Indigo Sparkle",
-    "Indigo Wrapping",
-    "Inlets",
-    "Insidious",
-    "Insignia",
-    "Invisible",
-    "Iridescent",
-    "Jean",
-    "Jolly Wrapping",
-    "Ladybug",
-    "Lapis",
-    "Lavish Crystal",
-    "Leafy Grass",
-    "Lemon",
-    "Lemonade",
-    "Lighthouse",
     "Lightning",
     "Limefire",
-    "Liquid Chrome",
     "Liquid Gold",
-    "Lovely Leopard",
-    "Lucid Halftone",
-    "Lucre",
-    "Lumber",
-    "Luxe",
-    "Luxurious",
-    "Luxury Wrapping",
-    "MISSING_WRAP",
-    "MaGGenta",
-    "Machine",
     "Magma",
-    "Magnetite",
-    "Mahogany",
-    "Mainframe",
-    "Maize",
-    "Malachite",
-    "Malevolent",
-    "Maroon",
-    "Medium stone grey",
-    "Merlot Wrapping",
-    "Mesa",
-    "Mesh",
-    "Messis",
-    "Midnight",
-    "Mint",
-    "Mint Choco Chip",
-    "Mintbread",
-    "Minty Wrapping",
-    "Mischief",
-    "Mocha Wrapping",
-    "Model",
-    "Money",
-    "Moonstone",
-    "Mossy Stone",
-    "Mousse Wrapping",
-    "Mummy",
-    "Mustard",
-    "Navy",
-    "Neapolitan",
     "Nebula",
-    "Necromancer",
-    "Nekore",
-    "Neo",
     "Neon Lights",
-    "Net",
-    "Nightmare",
-    "Noir",
-    "Normal",
-    "Nosnite",
-    "Nova",
     "Obsidian",
-    "Ocean Camo",
-    "Olive",
-    "Olo",
-    "Omnisand",
-    "Only Six",
-    "OranGG",
-    "Orange",
-    "Orichalcum",
-    "Ornamented",
-    "Ornate",
-    "Overseer",
-    "PB & J",
-    "Paint",
-    "Paparazzi",
-    "Patriot",
-    "Pearlescent",
-    "Pearly Wrapping",
-    "Peppermint",
-    "Peppermint Wrapping",
-    "Peridot",
-    "Peril",
-    "Periwinkle Wrapping",
     "Pine",
-    "Pink",
-    "Pink Crochet",
-    "Pink Glitter",
-    "Pink Lemonade",
-    "Pixel Blight",
     "Pixel Light",
-    "Plaid Pajama",
     "Plasma",
-    "Plastic",
-    "Playful",
-    "Polar Wrapping",
-    "Polaris",
-    "Popcorn",
-    "Popsicle",
-    "Portal",
-    "Purple",
-    "Purple Goo",
-    "Purpleize",
-    "Quartz",
-    "Quasar",
-    "RIVALS Wrapping",
-    "Rafflesia",
-    "Rage",
-    "Ravensoul",
-    "Red",
-    "Red Carpet",
-    "Red Moon",
-    "Red Rubber",
-    "Regal",
-    "Regal Wrapping",
-    "Reptile",
-    "Resolute",
-    "Rift",
-    "Rivalry",
-    "Rug",
-    "Ruined Pillars",
-    "Rust",
-    "Rustic",
-    "Salmon",
-    "Scales",
-    "Scorched",
-    "Scourge",
-    "Scribble",
-    "Sea Glass",
-    "Sensite",
-    "Sentinel",
-    "Serenity",
-    "Shadore",
-    "Shadow Halftone",
     "Shadow Ink",
-    "Shore",
-    "Simulation",
-    "Sky",
-    "Sleet",
-    "Slime",
-    "Slush",
-    "Snowfall",
-    "Snowy Night",
-    "Solar",
-    "Soul Scourge",
-    "Spartan",
     "Spectral",
-    "Speed",
-    "Spellslinger",
-    "Spiral",
-    "Splattered",
-    "Stained",
     "Starblaze",
     "Starfall",
-    "Steel",
-    "Stocking Fur",
-    "Storm",
-    "Street Camo",
-    "Strobe",
-    "Studded",
-    "Studs",
-    "Sunset",
-    "Sunset Sparkle",
-    "Supernova",
-    "Surge",
-    "Swirls",
-    "Synthwave",
-    "TIX",
-    "TV Error",
-    "TV Static",
-    "Tawny",
-    "Teal",
-    "Tealur",
-    "Tempest",
-    "Termination",
-    "The Heights",
-    "Thunderburst",
-    "Tidal",
-    "Tiger",
-    "Titanium",
-    "Toxin",
-    "Toy",
-    "Triplaser",
-    "Trophy",
-    "Tungsten",
-    "Tusky",
-    "Ugly Sweater",
-    "Ultra Zed",
-    "Ultrablue",
-    "Universal",
-    "Urban Camo",
-    "Venom",
-    "Vexed",
-    "Vigor",
-    "Vile",
-    "Violet",
-    "Virus",
-    "Voltaic",
-    "Waffle Cone",
-    "Waste",
-    "Water",
-    "Water Blaster",
-    "Watermelon",
-    "Wealth",
-    "Webbed",
-    "Well Done",
-    "Werewolf Fur",
-    "White",
     "Winter Solstice",
-    "Winter Wrapping",
-    "Wintergreen",
-    "Wintry",
-    "Woven",
-    "Yang",
-    "Yellow",
-    "Yin",
-    "Zombie",
+    ".dll",
+    ".exe",
+    "Borealis",
 }
 
 SkinData.Finishers = {
@@ -589,202 +246,37 @@ SkinData.Finishers = {
     "Ascend",
     "BANG!",
     "BONK!",
-    "Bad Mood",
     "Balloons",
     "Batsplosion",
-    "Beach Day",
-    "Beacon",
     "Become Bat",
-    "Bite",
-    "Blip",
-    "Bogey",
     "Bonesplosion",
-    "Boogie",
-    "Broom Ride",
     "Bubble Ball",
     "Bubblegum",
-    "Caked",
-    "Chalked",
-    "Chark Attack",
     "Chill Out",
-    "Clammed",
     "Clapped",
-    "Coalify",
     "Collapse",
     "Confetti",
     "Crushed",
     "Curtain Call",
-    "DRIP",
     "Darkheart",
-    "David",
-    "Decorated Player",
     "Delete",
     "Dematerialize",
     "Diamond Hands",
     "Digitize",
-    "Director\'s Cut",
+    "Director's Cut",
     "Disintegrate",
     "Electrocute",
-    "Elfify",
-    "Enlightened",
     "Erased",
     "Every Finisher Ever",
     "Faceplant",
-    "Fall Apart",
-    "Falling Icicles",
-    "Festive Confetti",
     "Firework Show",
-    "Flick",
-    "Flop",
-    "Folded",
-    "For Glory",
     "Freeze",
-    "Frozen",
-    "GOOAAALLLL",
-    "Giant Ice Spike",
-    "Giant Snowball",
-    "Gingerbreadify",
-    "Goofy Brawl",
-    "Grapple Hooked",
-    "Hacked",
-    "Heartbeat",
-    "Heavy Head",
-    "High Gravity",
-    "Hooked",
-    "Ignite",
-    "Impact Frame",
-    "Impaled",
-    "Inflate",
-    "Instability",
-    "Jolly Judgement",
-    "Kiddie Pool",
-    "Leprechaunify",
-    "Loose Coconut",
     "Lost Soul",
-    "Low Gravity",
-    "MISSING_FINISHER",
-    "Midas Touch",
-    "Mow Them Down",
-    "Northern Light Show",
-    "OOF",
-    "Opulent",
     "Orbital Strike",
-    "Paparazzi Flash",
-    "Petrify",
-    "Pixel Coins",
-    "Plushify",
-    "Poof",
-    "RIP",
-    "Ragdoll",
-    "Rainbow Barf",
-    "Reaper",
-    "Rising Star",
-    "Roadrunner",
-    "Rush",
-    "Sizzled",
-    "Sleigh Away",
-    "Snowballed",
-    "Snowmanify",
-    "Spaghettified",
-    "Spectralized",
-    "Splatter",
-    "Spooky Confetti",
-    "Spotlight",
-    "Squawk",
-    "Standing Ovation",
-    "Stiff",
-    "Sun Rays",
-    "Swept Away",
-    "Those Who Know",
-    "Toot",
-    "Tough Crowd",
-    "Tremble",
-    "Tumbleweed",
     "Very Tragic Banana Peel Accident",
-    "Warp Sickness",
-    "Warped Away",
-    "Water Balloons",
-    "Whack A Mole",
-    "Whirlpool",
-    "Wrapped",
-    "Yoink",
-    "Zombified",
+    "Blip",
+    "Boogie",
 }
-
-local function findPart(parent: Instance, name: string): BasePart?
-    local inst = parent:FindFirstChild(name)
-    if inst and inst:IsA("BasePart") then return inst end
-    return nil
-end
-
-local function getLimb(character: Model, limbName: string): BasePart?
-    if limbName == "Torso" then
-        return findPart(character, "UpperTorso") or findPart(character, "Torso")
-    elseif limbName == "HumanoidRootPart" then
-        return findPart(character, "HumanoidRootPart")
-    elseif limbName == "Head" then
-        return findPart(character, "Head")
-    elseif limbName == "Left Arm" then
-        return findPart(character, "LeftUpperArm") or findPart(character, "Left Arm")
-    elseif limbName == "Right Arm" then
-        return findPart(character, "RightUpperArm") or findPart(character, "Right Arm")
-    elseif limbName == "Left Leg" then
-        return findPart(character, "LeftUpperLeg") or findPart(character, "Left Leg")
-    elseif limbName == "Right Leg" then
-        return findPart(character, "RightUpperLeg") or findPart(character, "Right Leg")
-    end
-    return findPart(character, limbName)
-end
-
-local function computeColorPalette(mainColor: Color3)
-    local h, s, v = mainColor:ToHSV()
-    local brightColor = Color3.fromHSV(h, math.clamp(s * 0.45, 0, 1), math.clamp(v * 1.25, 0, 1))
-    local darkColor = Color3.fromHSV(h, math.clamp(s * 1.2, 0, 1), math.clamp(v * 0.35, 0, 1))
-    return mainColor, brightColor, darkColor
-end
-
-local function buildAttachment(name: string, parent: Instance, offset: Vector3?, instancesList: {Instance}): Attachment
-    local att = Instance.new("Attachment")
-    att.Name = name
-    if offset then att.Position = offset end
-    att:SetAttribute(Config.Tag, true)
-    att.Parent = parent
-    table.insert(instancesList, att)
-    return att
-end
-
-local function buildEmitter(props: {[string]: any}, parent: Instance, instancesList: {Instance}): ParticleEmitter
-    local emitter = Instance.new("ParticleEmitter")
-    emitter.LockedToPart = true
-    emitter.VelocityInheritance = 0
-    emitter.LightInfluence = 0
-    for key, val in pairs(props) do
-        emitter[key] = val
-    end
-    emitter:SetAttribute(Config.Tag, true)
-    emitter.Parent = parent
-    table.insert(instancesList, emitter)
-    return emitter
-end
-
-local function buildCosmeticPart(name: string, size: Vector3, color: Color3, transparency: number, parent: Instance, instancesList: {Instance}): Part
-    local p = Instance.new("Part")
-    p.Name = name
-    p.Size = size
-    p.Material = Enum.Material.Neon
-    p.Color = color
-    p.Transparency = transparency
-    p.CanCollide = false
-    p.CanQuery = false
-    p.CanTouch = false
-    p.Massless = true
-    p.CastShadow = false
-    p.Anchored = false
-    p:SetAttribute(Config.Tag, true)
-    p.Parent = parent
-    table.insert(instancesList, p)
-    return p
-end
 
 local Aura = {}
 Aura.Tracked = setmetatable({}, { __mode = "k" })
@@ -2440,6 +1932,368 @@ function GameHook.Destroy()
     Tracers.Cleanup()
 end
 
+local httpService = game:GetService("HttpService")
+
+local SaveManager = {}
+SaveManager.Folder = "RivalsHub"
+SaveManager.Ignore = {}
+SaveManager.Library = nil
+SaveManager.AutoloadLabel = nil
+
+local function getToggles()
+    return (typeof(getgenv) == "function" and getgenv().Toggles) or _G.Toggles or {}
+end
+
+local function getOptions()
+    return (typeof(getgenv) == "function" and getgenv().Options) or _G.Options or {}
+end
+
+local function safeIsFolder(path: string): boolean
+    local ok, res = pcall(function() return isfolder(path) end)
+    return ok and res or false
+end
+
+local function safeMakeFolder(path: string)
+    pcall(function()
+        if not safeIsFolder(path) then
+            makefolder(path)
+        end
+    end)
+end
+
+local function safeIsFile(path: string): boolean
+    local ok, res = pcall(function() return isfile(path) end)
+    return ok and res or false
+end
+
+local function safeReadFile(path: string): string?
+    local ok, res = pcall(function() return readfile(path) end)
+    if ok and typeof(res) == "string" then return res end
+    return nil
+end
+
+local function safeWriteFile(path: string, content: string): boolean
+    local ok = pcall(function() writefile(path, content) end)
+    return ok
+end
+
+local function safeListFiles(path: string): {string}
+    local ok, res = pcall(function() return listfiles(path) end)
+    if ok and typeof(res) == "table" then return res end
+    return {}
+end
+
+SaveManager.Parser = {
+    Toggle = {
+        Save = function(idx, object)
+            return { type = "Toggle", idx = idx, value = object.Value }
+        end,
+        Load = function(idx, data)
+            local toggles = getToggles()
+            if toggles[idx] and typeof(toggles[idx].SetValue) == "function" then
+                toggles[idx]:SetValue(data.value)
+            end
+        end,
+    },
+    Slider = {
+        Save = function(idx, object)
+            return { type = "Slider", idx = idx, value = tostring(object.Value) }
+        end,
+        Load = function(idx, data)
+            local options = getOptions()
+            if options[idx] and typeof(options[idx].SetValue) == "function" then
+                options[idx]:SetValue(tonumber(data.value) or data.value)
+            end
+        end,
+    },
+    Dropdown = {
+        Save = function(idx, object)
+            return { type = "Dropdown", idx = idx, value = object.Value, multi = object.Multi }
+        end,
+        Load = function(idx, data)
+            local options = getOptions()
+            if options[idx] and typeof(options[idx].SetValue) == "function" then
+                options[idx]:SetValue(data.value)
+            end
+        end,
+    },
+    ColorPicker = {
+        Save = function(idx, object)
+            local hex = (object.Value and typeof(object.Value.ToHex) == "function") and object.Value:ToHex() or "ffffff"
+            return { type = "ColorPicker", idx = idx, value = hex, transparency = object.Transparency or 0 }
+        end,
+        Load = function(idx, data)
+            local options = getOptions()
+            if options[idx] and typeof(options[idx].SetValueRGB) == "function" then
+                pcall(function()
+                    options[idx]:SetValueRGB(Color3.fromHex(data.value), data.transparency or 0)
+                end)
+            end
+        end,
+    },
+    KeyPicker = {
+        Save = function(idx, object)
+            return { type = "KeyPicker", idx = idx, mode = object.Mode, key = object.Value }
+        end,
+        Load = function(idx, data)
+            local options = getOptions()
+            if options[idx] and typeof(options[idx].SetValue) == "function" then
+                options[idx]:SetValue({ data.key, data.mode })
+            end
+        end,
+    },
+    Input = {
+        Save = function(idx, object)
+            return { type = "Input", idx = idx, text = object.Value }
+        end,
+        Load = function(idx, data)
+            local options = getOptions()
+            if options[idx] and typeof(options[idx].SetValue) == "function" and type(data.text) == "string" then
+                options[idx]:SetValue(data.text)
+            end
+        end,
+    },
+}
+
+function SaveManager:SetIgnoreIndexes(list: {string})
+    for _, key in ipairs(list) do
+        self.Ignore[key] = true
+    end
+end
+
+function SaveManager:SetFolder(folder: string)
+    self.Folder = folder
+    self:BuildFolderTree()
+end
+
+function SaveManager:BuildFolderTree()
+    safeMakeFolder(self.Folder)
+    safeMakeFolder(self.Folder .. "/settings")
+end
+
+function SaveManager:RefreshConfigList(): {string}
+    local list = safeListFiles(self.Folder .. "/settings")
+    local out = {}
+    for _, file in ipairs(list) do
+        if file:sub(-5) == ".json" then
+            local pos = file:find(".json", 1, true)
+            local startPos = pos
+            local char = file:sub(pos, pos)
+            while char ~= "/" and char ~= "\\" and char ~= "" do
+                pos = pos - 1
+                char = file:sub(pos, pos)
+            end
+            if char == "/" or char == "\\" then
+                table.insert(out, file:sub(pos + 1, startPos - 1))
+            else
+                table.insert(out, file:sub(1, startPos - 1))
+            end
+        end
+    end
+    table.sort(out)
+    return out
+end
+
+function SaveManager:Save(name: string): (boolean, string?)
+    if not name or #name:gsub(" ", "") == 0 then
+        return false, "Invalid config name"
+    end
+    self:BuildFolderTree()
+
+    local fullPath = self.Folder .. "/settings/" .. name .. ".json"
+    local data = { objects = {} }
+
+    local toggles = getToggles()
+    for idx, toggle in pairs(toggles) do
+        if not self.Ignore[idx] and toggle.Type and self.Parser[toggle.Type] then
+            table.insert(data.objects, self.Parser[toggle.Type].Save(idx, toggle))
+        end
+    end
+
+    local options = getOptions()
+    for idx, option in pairs(options) do
+        if not self.Ignore[idx] and option.Type and self.Parser[option.Type] then
+            table.insert(data.objects, self.Parser[option.Type].Save(idx, option))
+        end
+    end
+
+    local okEnc, encoded = pcall(httpService.JSONEncode, httpService, data)
+    if not okEnc or not encoded then
+        return false, "Failed to encode config data"
+    end
+
+    local okWrite = safeWriteFile(fullPath, encoded)
+    if not okWrite then
+        return false, "Failed to write file (executor file system error)"
+    end
+    return true
+end
+
+function SaveManager:Load(name: string): (boolean, string?)
+    if not name or #name:gsub(" ", "") == 0 then
+        return false, "No config file selected"
+    end
+
+    local file = self.Folder .. "/settings/" .. name .. ".json"
+    if not safeIsFile(file) then
+        return false, "Config file does not exist"
+    end
+
+    local content = safeReadFile(file)
+    if not content then
+        return false, "Failed to read config file"
+    end
+
+    local okDec, decoded = pcall(httpService.JSONDecode, httpService, content)
+    if not okDec or not decoded or not decoded.objects then
+        return false, "Corrupted config JSON format"
+    end
+
+    for _, item in ipairs(decoded.objects) do
+        if item.type and self.Parser[item.type] then
+            task.spawn(function()
+                self.Parser[item.type].Load(item.idx, item)
+            end)
+        end
+    end
+    return true
+end
+
+function SaveManager:SetLibrary(library: any)
+    self.Library = library
+end
+
+function SaveManager:LoadAutoloadConfig()
+    local autoPath = self.Folder .. "/settings/autoload.txt"
+    if safeIsFile(autoPath) then
+        local name = safeReadFile(autoPath)
+        if name and #name:gsub(" ", "") > 0 then
+            local success, err = self:Load(name)
+            if success and self.Library then
+                self.Library:Notify(string.format("Auto-loaded config %q", name), 4)
+            end
+        end
+    end
+end
+
+function SaveManager:BuildConfigSection(tab: any)
+    assert(self.Library, "Must set SaveManager.Library before BuildConfigSection")
+
+    local section = tab:AddRightGroupbox("Config Manager")
+
+    section:AddInput("SaveManager_ConfigName", {
+        Text = "Config Name",
+        Placeholder = "Enter name...",
+    })
+
+    section:AddDropdown("SaveManager_ConfigList", {
+        Text = "Saved Configs",
+        Values = self:RefreshConfigList(),
+        AllowNull = true,
+    })
+
+    section:AddButton({
+        Text = "Create Config",
+        DoubleClick = false,
+        Tooltip = "Save current settings under the entered config name",
+        Func = function()
+            local options = getOptions()
+            local name = options.SaveManager_ConfigName and options.SaveManager_ConfigName.Value
+            if not name or #name:gsub(" ", "") == 0 then
+                return self.Library:Notify("Please enter a valid config name!", 3)
+            end
+            local success, err = self:Save(name)
+            if success then
+                self.Library:Notify(string.format("Created config %q!", name), 3)
+                if options.SaveManager_ConfigList then
+                    options.SaveManager_ConfigList:SetValues(self:RefreshConfigList())
+                    options.SaveManager_ConfigList:SetValue(name)
+                end
+            else
+                self.Library:Notify("Save failed: " .. tostring(err), 3)
+            end
+        end,
+    }):AddButton({
+        Text = "Load Config",
+        DoubleClick = false,
+        Tooltip = "Load settings from selected config",
+        Func = function()
+            local options = getOptions()
+            local name = options.SaveManager_ConfigList and options.SaveManager_ConfigList.Value
+            if not name then
+                return self.Library:Notify("Please select a config to load!", 3)
+            end
+            local success, err = self:Load(name)
+            if success then
+                self.Library:Notify(string.format("Loaded config %q!", name), 3)
+            else
+                self.Library:Notify("Load failed: " .. tostring(err), 3)
+            end
+        end,
+    })
+
+    section:AddButton({
+        Text = "Overwrite Config",
+        DoubleClick = false,
+        Tooltip = "Overwrite selected config with current settings",
+        Func = function()
+            local options = getOptions()
+            local name = options.SaveManager_ConfigList and options.SaveManager_ConfigList.Value
+            if not name then
+                return self.Library:Notify("Please select a config to overwrite!", 3)
+            end
+            local success, err = self:Save(name)
+            if success then
+                self.Library:Notify(string.format("Overwrote config %q!", name), 3)
+            else
+                self.Library:Notify("Overwrite failed: " .. tostring(err), 3)
+            end
+        end,
+    }):AddButton({
+        Text = "Refresh List",
+        DoubleClick = false,
+        Tooltip = "Refresh saved configs list from disk",
+        Func = function()
+            local options = getOptions()
+            if options.SaveManager_ConfigList then
+                options.SaveManager_ConfigList:SetValues(self:RefreshConfigList())
+                options.SaveManager_ConfigList:SetValue(nil)
+            end
+            self.Library:Notify("Refreshed config list!", 2)
+        end,
+    })
+
+    section:AddButton({
+        Text = "Set as Autoload",
+        DoubleClick = false,
+        Tooltip = "Automatically load this config every time you inject",
+        Func = function()
+            local options = getOptions()
+            local name = options.SaveManager_ConfigList and options.SaveManager_ConfigList.Value
+            if not name then
+                return self.Library:Notify("Please select a config first!", 3)
+            end
+            safeWriteFile(self.Folder .. "/settings/autoload.txt", name)
+            if SaveManager.AutoloadLabel then
+                SaveManager.AutoloadLabel:SetText("Autoload: " .. name)
+            end
+            self.Library:Notify(string.format("Set %q as autoload!", name), 3)
+        end,
+    })
+
+    SaveManager.AutoloadLabel = section:AddLabel("Autoload: none", true)
+
+    local autoPath = self.Folder .. "/settings/autoload.txt"
+    if safeIsFile(autoPath) then
+        local name = safeReadFile(autoPath)
+        if name and #name:gsub(" ", "") > 0 then
+            SaveManager.AutoloadLabel:SetText("Autoload: " .. name)
+        end
+    end
+
+    self:SetIgnoreIndexes({ "SaveManager_ConfigList", "SaveManager_ConfigName" })
+end
+
 local Themes = {
     ["Default Dark"] = {
         AccentColor = Color3.fromRGB(0, 85, 255),
@@ -2498,7 +2352,7 @@ local function buildUI(onUnload: () -> ())
     local Window = Library:CreateWindow({
         Title = "RIVALS HUB",
         Center = true,
-        AutoShow = false,
+        AutoShow = true,
         TabPadding = 8,
         MenuFadeTime = 0.1,
     })
@@ -2865,9 +2719,13 @@ local function buildUI(onUnload: () -> ())
     Library.ToggleKeybind = globalOptions.MenuKeyPicker
 
     local UserInputService = game:GetService("UserInputService")
-    UserInputService.InputBegan:Connect(function(input, _)
+    UserInputService.InputBegan:Connect(function(input, processed)
+        if processed then return end
         local pickerVal = (globalOptions.MenuKeyPicker and globalOptions.MenuKeyPicker.Value) or "RightShift"
-        if input.KeyCode.Name == pickerVal or input.KeyCode == Enum.KeyCode.RightShift or input.KeyCode == Enum.KeyCode.RightControl or input.KeyCode == Enum.KeyCode.Insert then
+        if input.KeyCode.Name == pickerVal then
+            return
+        end
+        if input.KeyCode == Enum.KeyCode.Insert or input.KeyCode == Enum.KeyCode.RightControl then
             task.spawn(Library.Toggle)
         end
     end)
@@ -2894,6 +2752,13 @@ local function buildUI(onUnload: () -> ())
         end,
     })
 
+    if SaveManager then
+        SaveManager:SetLibrary(Library)
+        SaveManager:SetFolder("RivalsHub")
+        SaveManager:BuildConfigSection(Tabs.Settings)
+        SaveManager:LoadAutoloadConfig()
+    end
+
     Library:SetWatermark("RIVALS HUB | Zero-Lag")
     Library:SetWatermarkVisibility(Config.Settings.ShowWatermark)
 
@@ -2913,6 +2778,9 @@ end
 
 local App = {
     Config = Config,
+    SkinData = SkinData,
+    SaveManager = SaveManager,
+    SkinChanger = SkinChanger,
     Aura = Aura,
     Tracers = Tracers,
     ESP2D = ESP2D,

@@ -38,7 +38,12 @@ local Themes = {
     },
 }
 
-function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, Chams: any, ESP2D: any, SkinChanger: any, SkinData: any, onUnload: () -> ())
+function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, Chams: any, ESP2D: any, SkinChanger: any, SkinData: any, SaveManager: any, onUnload: any)
+    if typeof(SaveManager) == "function" and onUnload == nil then
+        onUnload = SaveManager
+        SaveManager = nil
+    end
+
     local env = (typeof(getgenv) == "function" and getgenv()) or _G
     if env.LinoriaLib and typeof(env.LinoriaLib.Unload) == "function" then
         pcall(env.LinoriaLib.Unload)
@@ -60,7 +65,7 @@ function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, Cha
     local Window = Library:CreateWindow({
         Title = "RIVALS HUB",
         Center = true,
-        AutoShow = false,
+        AutoShow = true,
         TabPadding = 8,
         MenuFadeTime = 0.1,
     })
@@ -467,9 +472,13 @@ function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, Cha
     Library.ToggleKeybind = globalOptions.MenuKeyPicker
 
     local UserInputService = game:GetService("UserInputService")
-    UserInputService.InputBegan:Connect(function(input, _)
+    UserInputService.InputBegan:Connect(function(input, processed)
+        if processed then return end
         local pickerVal = (globalOptions.MenuKeyPicker and globalOptions.MenuKeyPicker.Value) or "RightShift"
-        if input.KeyCode.Name == pickerVal or input.KeyCode == Enum.KeyCode.RightShift or input.KeyCode == Enum.KeyCode.RightControl or input.KeyCode == Enum.KeyCode.Insert then
+        if input.KeyCode.Name == pickerVal then
+            return
+        end
+        if input.KeyCode == Enum.KeyCode.Insert or input.KeyCode == Enum.KeyCode.RightControl then
             task.spawn(Library.Toggle)
         end
     end)
@@ -496,6 +505,13 @@ function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, Cha
         end,
     })
 
+    if SaveManager then
+        SaveManager:SetLibrary(Library)
+        SaveManager:SetFolder("RivalsHub")
+        SaveManager:BuildConfigSection(Tabs.Settings)
+        SaveManager:LoadAutoloadConfig()
+    end
+
     Library:SetWatermark("RIVALS HUB | Zero-Lag")
     Library:SetWatermarkVisibility(Config.Settings.ShowWatermark)
 
@@ -505,7 +521,7 @@ function Interface.Init(Config: any, Aura: any, Tracers: any, GameHook: any, Cha
         end
     end)
 
-    Library:Notify("RIVALS HUB Loaded! Press [RightShift] or [Insert] to toggle menu", 6)
+    Library:Notify("RIVALS HUB Loaded! Press [RightShift] or [Insert] to toggle menu", 5)
 
     Interface.Library = Library
     Interface.Window = Window

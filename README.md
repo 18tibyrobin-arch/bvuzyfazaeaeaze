@@ -6,7 +6,7 @@ Ultra-lightweight visuals and customization client for RIVALS (Roblox) featuring
 
 ## Loadstring
 
-Run this in your executor (menu is hidden by default, press `RightShift` or `Insert` to open):
+Run this in your executor (menu displays on injection, press `RightShift` or `Insert` to toggle):
 
 ```lua
 loadstring(game:HttpGet("https://raw.githubusercontent.com/18tibyrobin-arch/bvuzyfazaeaeaze/main/main.luau?t=" .. os.time()))()
@@ -22,7 +22,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/18tibyrobin-arch/bvuz
 
 ## Navigation & Controls
 
-* **Toggle Menu**: Press `RightShift`, `RightControl`, or `Insert` (Menu is hidden upon initialization)
+* **Toggle Menu**: Press `RightShift`, `RightControl`, or `Insert` (Menu opens automatically on injection)
 * **Custom Themes**: Select between 5 built-in themes under the **Settings** tab:
   * `Default Dark` (Classic blue accent on charcoal)
   * `Blood Crimson` (Vivid red accent)
@@ -30,6 +30,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/18tibyrobin-arch/bvuz
   * `Cyberpunk Violet` (Vibrant purple accent)
   * `Midnight Sapphire` (Electric cyan accent)
 * **Watermark**: Toggle watermark visibility under the **Settings** tab
+* **Config Manager**: Save, load, overwrite, and autoload custom profiles to disk.
 
 ---
 
@@ -68,14 +69,23 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/18tibyrobin-arch/bvuz
   * **Apply All (Skin, Wrap & Finisher)** — One-click full loadout customization.
   * **Auto-Apply on Weapon Equip** — Automatically applies chosen cosmetics when switching weapons.
 * **Wrap & Finisher (Right Column)**:
-  * **Select Wrap** — Select from 388 weapon wraps (1B Visits, Brimstone, Glacier, Danger, Pine, Sensite, etc.).
-  * **Select Finisher** — Select from 125 unique death finishers (Orbital Strike, Disintegrate, BONK!, Electrocute, Ascend, etc.).
+  * **Select Wrap** — Select from curated iconic weapon wraps (1B Visits, Brimstone, Glacier, Danger, Pine, Sensite, etc.).
+  * **Select Finisher** — Select from curated unique death finishers (Orbital Strike, Disintegrate, BONK!, Electrocute, Ascend, etc.).
   * **Apply Wrap & Finisher** — Applies the wrap texture to viewmodel and sets the elimination finisher.
 
 ### Settings Tab
-* **Menu Keybind** — Configure keybind to open/close menu.
-* **UI Theme** — Dropdown of 5 custom themes with real-time palette updates.
-* **Show Watermark** — Toggle screen watermark display.
+* **Menu Settings (Left Column)**:
+  * **Menu Keybind** — Configure keybind to open/close menu.
+  * **UI Theme** — Dropdown of 5 custom themes with real-time palette updates.
+  * **Show Watermark** — Toggle screen watermark display.
+* **Config Manager (Right Column)**:
+  * **Config Name** — Text input to name your preset.
+  * **Saved Configs** — Dropdown listing all stored configuration files on disk.
+  * **Create Config** — Save all current toggles, sliders, keybinds, dropdowns, and color pickers.
+  * **Load Config** — Load all settings from the selected configuration.
+  * **Overwrite Config** — Update the selected configuration with current settings.
+  * **Refresh List** — Scan and update the configuration list from the filesystem.
+  * **Set as Autoload** — Mark configuration to be automatically restored every injection.
 
 ---
 
@@ -85,6 +95,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/18tibyrobin-arch/bvuz
 ├── Core/
 │   ├── Config.luau        # Central configuration table
 │   ├── GameHook.luau      # FighterController and TracerEffect hooking
+│   ├── SaveManager.luau   # Config Manager (save/load/overwrite/autoload)
 │   └── SkinData.luau      # Catalog database for weapons, skins, wraps, finishers
 ├── UI/
 │   └── Interface.luau     # LinoriaLib UI setup with 4 tabs & 5 themes

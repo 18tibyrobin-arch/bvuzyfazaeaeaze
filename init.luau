@@ -30,6 +30,7 @@ end
 
 local Config = loadModule("Core/Config.luau")
 local SkinData = loadModule("Core/SkinData.luau")
+local SaveManager = loadModule("Core/SaveManager.luau")
 local Aura = loadModule("Visuals/Aura.luau")
 local Tracers = loadModule("Visuals/Tracers.luau")
 local ESP2D = loadModule("Visuals/ESP2D.luau")
@@ -46,6 +47,7 @@ end
 local App = {
     Config = Config,
     SkinData = SkinData,
+    SaveManager = SaveManager,
     Aura = Aura,
     Tracers = Tracers,
     ESP2D = ESP2D,
@@ -77,7 +79,7 @@ if SkinChanger and SkinChanger.HookGame then
     SkinChanger.HookGame()
 end
 
-App.Interface = Interface.Init(Config, Aura, Tracers, GameHook, Chams, ESP2D, SkinChanger, SkinData, function()
+App.Interface = Interface.Init(Config, Aura, Tracers, GameHook, Chams, ESP2D, SkinChanger, SkinData, SaveManager, function()
     App.Destroy()
 end)
 
